@@ -16,9 +16,12 @@ import { Button } from '../../../../component/button/Button';
 import Header from '../../../../component/header/Header';
 import { SIZES } from '../../../../themes/Sizes';
 import { styles } from './styles';
-import { GET_All_COMMITTEE, GET_FILE } from '../../../../graphql/query';
+import {
+  GET_All_COMMITTEE,
+  GET_COMMITTEES_BY_ROLE,
+  GET_FILE
+} from '../../../../graphql/query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_URL } from '../../../../ApolloClient/Client';
 
 const AddAppointmentGeneral = () => {
   const navigation = useNavigation();
@@ -122,13 +125,13 @@ const AddAppointmentGeneral = () => {
 
   // fetch commitees
   const { loading: CommitteeLoading, error: CommitteeError } = useQuery(
-    GET_All_COMMITTEE,
+    GET_COMMITTEES_BY_ROLE,
     {
-      variables: { isDeleted: true },
+      variables: { head: true, secretary: true, member: false },
       onCompleted: (data) => {
         if (data) {
-          console.log('committees', data?.committees.items);
-          setCommittee(data.committees.items);
+          console.log('committees', data?.committeesByRole.items);
+          setCommittee(data.committeesByRole.items);
         }
       }
     }
@@ -143,14 +146,14 @@ const AddAppointmentGeneral = () => {
         presentationStyle: 'fullScreen',
         type: [DocumentPicker.types.allFiles]
       });
-
+      const url = await AsyncStorage.getItem('@url');
       response.map((res) => {
         if (res !== null) {
           const formData = new FormData();
           formData.append('file', res);
           console.log('formdata', formData);
 
-          fetch(`${BASE_URL}/o/imeeting-rest/v1.0/file-upload`, {
+          fetch(`https://${url}//o/imeeting-rest/v1.0/file-upload`, {
             method: 'POST',
             headers: {
               Authorization: 'Bearer ' + `${token}`,
@@ -161,30 +164,17 @@ const AddAppointmentGeneral = () => {
             .then((response) => response.json())
             .then((responseData) => {
               // setFileId(responseData?.fileEnteryId);
-              fileId.push(responseData?.fileEnteryId);
-              console.log('fileId', fileId);
-              setFilesId(fileId);
-
-              if (fileId) {
-                fileId.map((id) =>
-                  fetchFile({
-                    variables: {
-                      fileEntryId: id
-                    },
-                    onCompleted: (data) => {
-                      console.log(data, 'inner file dartas');
-                      setFileResponse((prev) => {
-                        console.log('prev', prev);
-                        if (prev.fileEnteryId !== id) {
-                          return [...prev, data.uploadedFile];
-                        }
-                      });
-                    }
-                  })
-                );
+              console.log('response data', responseData);
+              if (responseData) {
+                setFileResponse((prev) => {
+                  const pevDaa = prev.filter((ite) => {
+                    return ite.fileEnteryId !== responseData.fileEnteryId;
+                  });
+                  return [...pevDaa, responseData];
+                });
               }
             })
-            .then(() => {})
+
             .catch((e) => console.log('file upload error--', e));
         }
       });
@@ -193,12 +183,20 @@ const AddAppointmentGeneral = () => {
     }
   }, []);
 
-  const removeFile = (id) => {
-    const filteredData = fileResponse?.filter(
-      (item) => item.fileEnteryId !== id
-    );
-    //Updating List Data State with NEW Data.
-    setFileResponse(filteredData);
+  useEffect(() => {
+    const fileId = fileResponse.map((file) => file.fileEnteryId);
+
+    setFilesId(fileId);
+  }, [fileResponse]);
+  console.log('file id', filesId);
+
+  const removeFile = (file) => {
+    setFileResponse((prev) => {
+      const pevDaa = prev.filter((ite) => {
+        return ite.fileEnteryId !== file.fileEnteryId;
+      });
+      return [...pevDaa];
+    });
   };
 
   return (
@@ -278,7 +276,7 @@ const AddAppointmentGeneral = () => {
                   fileSize={file.size}
                   onDownloadPress={() => checkPermission(file.downloadUrl)}
                   fileType={file.type}
-                  onRemovePress={() => removeFile(file.fileEnteryId)}
+                  onRemovePress={() => removeFile(file)}
                   style={{
                     borderBottomWidth: SIZES[1],
                     borderBottomColor: Colors.Approved

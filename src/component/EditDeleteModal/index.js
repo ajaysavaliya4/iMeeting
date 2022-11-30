@@ -28,7 +28,7 @@ const EditDeleteModal = ({
           width={SIZES[18]}
         />
       </TouchableOpacity>
-      {editable && (
+      {editable && subjectStatus !== 'Deleted' && (
         <View>
           <Divider style={styles.divider} />
           <TouchableOpacity style={styles.btnView} onPress={onPressEdit}>

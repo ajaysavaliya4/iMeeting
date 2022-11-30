@@ -36,7 +36,8 @@ const EditAppointmentLocation = () => {
     endTime,
     TimeZone,
     Repeat,
-    item
+    item,
+    userRequired
   } = route?.params;
   console.log('appointment data from addmeetinglocation', {
     attachFiles,
@@ -50,12 +51,15 @@ const EditAppointmentLocation = () => {
     endTime,
     TimeZone,
     Repeat,
-    item
+    item,
+    userRequired
   });
   const [openLocation, setOpenLocation] = useState(false);
-  const [valueLocation, setValueLocation] = useState(null);
+  const [valueLocation, setValueLocation] = useState(item.locationId);
   const [openVideoConference, setOpenVideoConference] = useState(false);
-  const [valueVideoConference, setValueVideoConference] = useState(null);
+  const [valueVideoConference, setValueVideoConference] = useState(
+    item.platformName == 'Google Meet' ? 1 : 2
+  );
   const [platform, setPlatform] = useState(null);
   const [location, setLocation] = useState([]);
   const [items, setItems] = useState([
@@ -108,7 +112,8 @@ const EditAppointmentLocation = () => {
     // export const GET_All_SUBJECTS = gql`
     refetchQueries: [
       {
-        query: GET_All_APPOINTMENT
+        query: GET_All_APPOINTMENT,
+        variables: { searchValue: '' }
       }
     ],
     onCompleted: (data) => {
@@ -222,10 +227,9 @@ const EditAppointmentLocation = () => {
             }}
             setValue={setValueVideoConference}
             setItems={setItems}
-            placeholder={''}
+            placeholder={item.platformName}
             placeholderStyle={{
-              ...Fonts.PoppinsRegular[12],
-              color: Colors.secondary
+              ...Fonts.PoppinsRegular[14]
             }}
             style={{
               borderWidth: 0,
@@ -269,7 +273,7 @@ const EditAppointmentLocation = () => {
                     locationId: valueLocation,
                     platformId: platform.platformId,
                     repeat: Repeat,
-                    required: [],
+                    required: userRequired,
                     setDate: startDate,
                     setTime: startTime,
                     endDate: endDate,

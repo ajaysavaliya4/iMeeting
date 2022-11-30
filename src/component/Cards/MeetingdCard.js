@@ -2,6 +2,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Divider } from 'react-native-paper';
+import { useMutation, useQuery } from '@apollo/client';
+import moment from 'moment';
 
 import { Colors } from '../../themes/Colors';
 import { Fonts } from '../../themes';
@@ -9,27 +11,17 @@ import Icon from '../Icon';
 import IconName from '../Icon/iconName';
 import EditDeleteModal from '../EditDeleteModal';
 import { SIZES } from '../../themes/Sizes';
-import moment from 'moment';
 import { GET_ALL_LOCATION_BY_ID, GET_All_MEETING } from '../../graphql/query';
-import { useMutation, useQuery } from '@apollo/client';
 import { UserContext } from '../../context';
 import { DELETE_MEETING } from '../../graphql/mutation';
 import { getHighlightedText } from '../highlitedText/HighlitedText';
 
-const MeetingsCard = ({ item, text, index }) => {
+const MeetingsCard = ({ item, text, index, visibleIndex, setVisibleIndex }) => {
   const navigation = useNavigation();
 
   const [location, setLocation] = useState('');
-  const { editModal, setEditModal } = useContext(UserContext);
   const [role, setRole] = useState(item.yourRoleName);
-  console.log('context', editModal);
-  const [showEditModal, setShowEditModal] = useState(editModal);
-  console.log('showEditModal', showEditModal);
-
-  // get location
-  useEffect(() => {
-    setShowEditModal(editModal);
-  }, [editModal]);
+  const [showModal, setShowModal] = useState(false);
 
   const {
     loading: loadingLocation,
@@ -68,9 +60,7 @@ const MeetingsCard = ({ item, text, index }) => {
       }
     }
   );
-  if (data) {
-    console.log('delete meeting', data.deleteMeeting.status);
-  }
+
   if (error) {
     Alert.alert('Delete Subject Error', [
       {
@@ -82,7 +72,6 @@ const MeetingsCard = ({ item, text, index }) => {
   }
 
   const onDeleteHandler = () => {
-    setEditModal(false);
     Alert.alert('Delete meeting', 'Are you sure you want to delete this?', [
       {
         text: 'Delete',
@@ -114,18 +103,11 @@ const MeetingsCard = ({ item, text, index }) => {
   };
 
   return (
-    <TouchableOpacity activeOpacity={1} onPress={() => setEditModal(false)}>
+    <TouchableOpacity activeOpacity={1} onPress={() => setVisibleIndex(-1)}>
       {index !== 0 && <Divider style={styles.divider} />}
 
       {/* committee details */}
-      <View
-        style={styles.committeeDetailView}
-        onPress={() => {
-          // navigation.navigate("SubjectDetails");
-          setEditModal(false);
-        }}
-        activeOpacity={0.5}
-      >
+      <View style={styles.committeeDetailView}>
         {getHighlightedText(item.meetingTitle, text)}
         {/* <Text style={styles.txtCommitteeTitle} numberOfLines={1}>
           {item.title}
@@ -157,31 +139,32 @@ const MeetingsCard = ({ item, text, index }) => {
       {/* dotsView */}
       <TouchableOpacity
         onPress={() => {
-          // setEditModal(!showEditModal);
-          setShowEditModal(!showEditModal);
+          setShowModal(!showModal);
+
+          setVisibleIndex(visibleIndex == -1 ? index : -1);
         }}
         style={styles.dotsView}
       >
         <Icon name={IconName.Dots} height={16} width={6} />
       </TouchableOpacity>
-      {showEditModal && (
+      {visibleIndex === index && (
         <View style={styles.modalView}>
           <EditDeleteModal
             onPressDelete={() => {
               onDeleteHandler();
-              setShowEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressView={() => {
               navigation.navigate('MeetingDetails', { item });
-              setShowEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressEdit={() => {
-              setShowEditModal(false);
+              setVisibleIndex(-1);
               navigation.navigate('EditMeetingGeneral', { item });
             }}
             subjectStatus={item.meetingStatusTitle}
-            editable={role == 'Head' || role == 'Secretory' ? true : flase}
-            deleted={role == 'Head' || role == 'Secretory' ? true : flase}
+            editable={role == 'Head' || role == 'Secretory' ? true : false}
+            deleted={role == 'Head' || role == 'Secretory' ? true : false}
           />
         </View>
       )}
@@ -222,8 +205,11 @@ const styles = StyleSheet.create({
   },
   dotsView: {
     position: 'absolute',
-    right: SIZES[16],
-    top: SIZES[32]
+    right: SIZES[18],
+    top: SIZES[32],
+    width: 16,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   discriptionView: {
     paddingVertical: SIZES[6],

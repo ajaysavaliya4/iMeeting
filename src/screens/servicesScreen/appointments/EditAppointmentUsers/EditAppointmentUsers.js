@@ -27,10 +27,10 @@ const EditAppointmentUsers = () => {
   const { item } = route?.params;
   const [searchText, setSearchText] = useState('');
   const [users, setUsers] = useState([]);
+  const [required, setRequired] = useState([]);
   const { attachFiles, committee, title, discription } = route?.params;
   console.log({ attachFiles, committee, title, discription });
-  const { selectedUsers, setSelectedUsers, required, setRequired } =
-    useContext(UserContext);
+  const { selectedUsers, setSelectedUsers } = useContext(UserContext);
   const [selected, setSelected] = useState(item.userDetails);
 
   useEffect(() => {
@@ -42,11 +42,10 @@ const EditAppointmentUsers = () => {
     }
   }, [selectedUsers]);
 
-  useEffect(() => {
-    if (required.length > 0) {
-      console.log('required from eau', required);
-    }
-  }, [required]);
+  const userId = required?.map((item) => item.user);
+  console.log('userId', userId);
+  const userRequired = required?.map((item) => item.isRequired);
+  console.log('userRequired', userRequired);
 
   // console.log('required', required);
 
@@ -102,7 +101,12 @@ const EditAppointmentUsers = () => {
           <Text style={styles.txtCommittee}>Users</Text>
           <View style={styles.btnCommittees}>
             <Text style={styles.txtBtnCommittees}>
-              Select {selectedUsers?.length > 0 ? selectedUsers?.length : ''}
+              Select{' '}
+              {selectedUsers?.length > 0
+                ? selectedUsers?.length
+                : '' || item.userDetails?.length > 0
+                ? item.userDetails?.length
+                : ''}
             </Text>
             <Icon
               name={IconName.Arrow_Right}
@@ -113,14 +117,49 @@ const EditAppointmentUsers = () => {
         </TouchableOpacity>
         <Divider style={styles.divider} />
 
-        <FlatList
-          data={selectedUsers}
-          keyExtractor={({ item, index }) => `user-${index}`}
-          renderItem={({ item, index }) => (
-            <UserCard item={item} index={index} text={searchText} />
-          )}
-          showsVerticalScrollIndicator={false}
-        />
+        {selectedUsers?.length > 0 ? (
+          <FlatList
+            data={selectedUsers || item.userDetails}
+            keyExtractor={(item, index) => `${item.userId}`}
+            renderItem={({ item, index }) => (
+              <UserCard
+                item={item}
+                index={index}
+                text={searchText}
+                userSelect={true}
+                required={required}
+                setRequired={setRequired}
+                isSwitchOnRow={true}
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : item.userDetails.length > 0 ? (
+          <FlatList
+            data={item.userDetails}
+            keyExtractor={(item, index) => `${item.userId}`}
+            renderItem={({ item, index }) => (
+              <UserCard
+                item={item}
+                index={index}
+                text={searchText}
+                userSelect={false}
+                isSwitchOnRow={true}
+                required={required}
+                setRequired={setRequired}
+              />
+            )}
+            showsVerticalScrollIndicator={false}
+          />
+        ) : (
+          <View
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text style={{ ...Fonts.PoppinsBold[20], color: Colors.primary }}>
+              No selected user
+            </Text>
+          </View>
+        )}
       </View>
 
       <View
@@ -146,7 +185,8 @@ const EditAppointmentUsers = () => {
                 committee,
                 title,
                 discription,
-                users,
+                users: userId,
+                userRequired,
                 item
               })
             }

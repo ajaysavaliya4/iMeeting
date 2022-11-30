@@ -24,7 +24,7 @@ const LocationDetails = () => {
   const route = useRoute();
   const { locationId, platform } = route?.params;
   const [location, setLocation] = useState({});
-  const [role, setRole] = useState('Member');
+  const [role, setRole] = useState('Head');
 
   // get location by id
   const {
@@ -84,7 +84,7 @@ const LocationDetails = () => {
           <Text style={styles.txtTitle}>Building / Floor / Room</Text>
           <Text
             style={styles.discription}
-          >{`${location.building}, ${location.floor}, ${location.room}`}</Text>
+          >{`${location?.building}, ${location?.floor}, ${location?.room}`}</Text>
           <Divider style={styles.divider} />
 
           <Text style={styles.txtTitle}>Google Map URL</Text>
@@ -96,7 +96,7 @@ const LocationDetails = () => {
               marginVertical: SIZES[10]
             }}
           >
-            <Text style={styles.txtUrl}>{platform?.plateformlink}</Text>
+            <Text style={styles.txtUrl}>{location.googleMapURL}</Text>
             <TouchableOpacity
               onPress={() => Clipboard.setString(location.googleMapURL)}
             >

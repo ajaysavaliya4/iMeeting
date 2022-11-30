@@ -22,21 +22,30 @@ import UserCard from '../../../../component/Cards/userCard/UserCard';
 import { styles } from './styles';
 import { Fonts } from '../../../../themes';
 import { UserContext } from '../../../../context';
-import { canUseLayoutEffect } from '@apollo/client/utilities';
 
 const AddMeetingUser = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [users, setUsers] = useState([]);
   const [searchText, setSearchText] = useState('');
-  const [required, setRequired] = useState(null);
-  // const [selectUser, setRequiredse] = useState(null);
+  const [required, setRequired] = useState([]);
+  const [userRequire, setUserRequire] = useState([]);
+  // const [required, setRequiredse] = useState(null);
   const { selectedUsers } = useContext(UserContext);
   const { attachFiles, committee, title, discription } = route?.params;
 
   useEffect(() => {
-    console.log('required', required);
+    const userId = required?.map((item) => item.user);
+    console.log('userId', userId);
+    setUsers(userId);
+    const userRequired = required?.map((item) => item.isRequired);
+    setUserRequire(userRequired);
+    console.log('userRequired', userRequired);
   }, [required]);
+  // const userId = required?.map((item) => item.user);
+  // console.log('userId', userId);
+  // const userRequired = required?.map((item) => item.isRequired);
+  // console.log('userRequired', userRequired);
 
   console.log('meeting data from user', {
     attachFiles,
@@ -61,7 +70,12 @@ const AddMeetingUser = () => {
       <Header
         name={'Add meeting'}
         rightIconName={IconName.Close}
-        onRightPress={() => navigation.goBack()}
+        onRightPress={() =>
+          navigation.navigate('Details', {
+            title: 'Meetings',
+            active: '0'
+          })
+        }
       />
 
       <View style={styles.subContainer}>
@@ -133,6 +147,9 @@ const AddMeetingUser = () => {
                 isSwitchOnRow={true}
                 required={required}
                 setRequired={setRequired}
+                userSelect={true}
+                deleted={false}
+                editable={item.roles == 'Head' || item.roles == 'secretary'}
               />
             )}
             showsVerticalScrollIndicator={false}
@@ -171,7 +188,8 @@ const AddMeetingUser = () => {
                 committee,
                 title,
                 discription,
-                users
+                users: users,
+                userRequired: userRequire
               })
             }
             layoutStyle={[

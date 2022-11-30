@@ -1,4 +1,12 @@
-import { View, Text, SafeAreaView, TextInput, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TextInput,
+  ScrollView,
+  PermissionsAndroid,
+  Platform
+} from 'react-native';
 import React, { useState, useCallback, useEffect } from 'react';
 import * as Progress from 'react-native-progress';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -7,6 +15,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { Divider } from 'react-native-paper';
 import DocumentPicker from 'react-native-document-picker';
 import { useLazyQuery, useQuery } from '@apollo/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { IconName } from '../../../../component';
 import { Colors } from '../../../../themes/Colors';
@@ -18,12 +27,12 @@ import { SIZES } from '../../../../themes/Sizes';
 import { styles } from './styles';
 import {
   GET_All_COMMITTEE,
+  GET_COMMITTEES_BY_ROLE,
   GET_COMMITTEE_BY_ID,
   GET_FILE,
   GET_MEETING_BY_ID
 } from '../../../../graphql/query';
-import { BASE_URL } from '../../../../ApolloClient/Client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import RNFetchBlob from 'rn-fetch-blob';
 
 const EditMeetingGeneralScreen = () => {
   const navigation = useNavigation();
@@ -44,10 +53,11 @@ const EditMeetingGeneralScreen = () => {
   const [valueCommitee, setValue] = useState(item?.committeeId);
   const [title, setTitle] = useState(item?.meetingTitle);
   const [discription, setDiscription] = useState(item.description);
+  const [error, setError] = useState('');
   let fileId = [];
 
   const checkPermission = async (file) => {
-    console.log('check permission');
+    console.log('check permissions', file);
     if (Platform.OS === 'ios') {
       downloadFile(file);
     } else {
@@ -75,7 +85,8 @@ const EditMeetingGeneralScreen = () => {
   };
 
   const downloadFile = (file) => {
-    console.log('downloadfile');
+    console.log('downloadfile', file);
+
     // Get today's date to add the time suffix in filename
     let date = new Date();
     // File URL which we want to download
@@ -83,20 +94,21 @@ const EditMeetingGeneralScreen = () => {
     // Function to get extention of the file url
     let file_ext = getFileExtention(FILE_URL);
 
-    file_ext = '.' + file_ext[0];
+    // file_ext = '.' + file_ext[0];
 
     // config: To get response by passing the downloading related options
     // fs: Root directory path to download
     const { config, fs } = RNFetchBlob;
-    let RootDir = fs.dirs.PictureDir;
+    let RootDir =
+      Platform.OS === 'ios' ? fs.dirs.DocumentDir : fs.dirs.PictureDir;
     let options = {
       fileCache: true,
       addAndroidDownloads: {
         path:
           RootDir +
           '/file_' +
-          Math.floor(date.getTime() + date.getSeconds() / 2) +
-          file_ext,
+          Math.floor(date.getTime() + date.getSeconds() / 2),
+
         description: 'downloading file...',
         notification: true,
         // useDownloadManager works with Android only
@@ -104,7 +116,7 @@ const EditMeetingGeneralScreen = () => {
       }
     };
     config(options)
-      .fetch('GET', FILE_URL)
+      .fetch('GET', file)
       .then((res) => {
         // Alert after successful downloading
         console.log('res -> ', res.respInfo.redirects[0]);
@@ -122,12 +134,15 @@ const EditMeetingGeneralScreen = () => {
 
   const [fetchFile, getFile] = useLazyQuery(GET_FILE);
 
-  const { data, error, loading } = useQuery(GET_MEETING_BY_ID, {
+  const {
+    data,
+    error: MeetingError,
+    loading
+  } = useQuery(GET_MEETING_BY_ID, {
     variables: {
       meetingId: item.meetingId
     },
     onCompleted: (data) => {
-      console.log('meeting by id', data.meeting);
       if (data) {
         setMeeting(data.meeting);
       }
@@ -143,7 +158,6 @@ const EditMeetingGeneralScreen = () => {
       organizationId: item.committeeId
     },
     onCompleted: (data) => {
-      console.log('get committee by id', data);
       if (data) {
         setCommitteeData(data.committee);
       }
@@ -153,39 +167,51 @@ const EditMeetingGeneralScreen = () => {
     }
   });
   // fetch commitees
-  const { loading: CommitteeLoading, error: CommitteeError } = useQuery(
-    GET_All_COMMITTEE,
-    {
-      variables: { isDeleted: true },
-      onCompleted: (data) => {
-        if (data) {
-          console.log('committees', data?.committees.items);
-          setCommittee(data.committees.items);
-        }
+  const {
+    loading: CommitteeLoading,
+    error: CommitteeError,
+    data: CommitteeData
+  } = useQuery(GET_COMMITTEES_BY_ROLE, {
+    variables: { head: true, secretary: true, member: false },
+    onCompleted: (data) => {
+      if (data) {
+        setCommittee(data?.committeesByRole?.items);
       }
+    },
+    onError: (data) => {
+      console.log('commitee error', data);
     }
-  );
-  if (CommitteeError) {
-    console.log('commitee error', CommitteeError);
-  }
+  });
+
   item?.attachFileIds?.map((id) => {
+    console.log('id', id);
     const { loading, error } = useQuery(GET_FILE, {
       variables: {
         fileEntryId: id
       },
       onCompleted: (data) => {
-        setFileResponse((prev) => {
-          console.log('prev', prev);
-          if (prev.fileEnteryId !== id) {
-            return [...prev, data.uploadedFile];
-          }
-        });
+        console.log('get file by id', data.uploadedFile);
+        if (data) {
+          setFileResponse((prev) => {
+            const pevDaa = prev.filter((ite) => {
+              return ite.fileEnteryId !== data.fileEnteryId;
+            });
+            return [...pevDaa, data.uploadedFile];
+          });
+        }
       }
     });
     if (error) {
       console.log('file error', error);
     }
   });
+
+  useEffect(() => {
+    const fileId = fileResponse.map((file) => file.fileEnteryId);
+
+    setFilesId(fileId);
+  }, [fileResponse]);
+  console.log('file id', filesId);
 
   useEffect(() => {
     getToken();
@@ -204,14 +230,14 @@ const EditMeetingGeneralScreen = () => {
         presentationStyle: 'fullScreen',
         type: [DocumentPicker.types.allFiles]
       });
-
+      const url = await AsyncStorage.getItem('@url');
       response.map((res) => {
         if (res !== null) {
           const formData = new FormData();
           formData.append('file', res);
           console.log('formdata', formData);
 
-          fetch(`${BASE_URL}/o/imeeting-rest/v1.0/file-upload`, {
+          fetch(`https://${url}//o/imeeting-rest/v1.0/file-upload`, {
             method: 'POST',
             headers: {
               Authorization: 'Bearer ' + `${token}`,
@@ -222,31 +248,20 @@ const EditMeetingGeneralScreen = () => {
             .then((response) => response.json())
             .then((responseData) => {
               // setFileId(responseData?.fileEnteryId);
-              fileId.push(responseData?.fileEnteryId);
-              console.log('fileId', fileId);
-              setFilesId(fileId);
-
-              if (fileId) {
-                fileId.map((id) =>
-                  fetchFile({
-                    variables: {
-                      fileEntryId: id
-                    },
-                    onCompleted: (data) => {
-                      console.log(data, 'inner file dartas');
-                      setFileResponse((prev) => {
-                        console.log('prev', prev);
-                        if (prev.fileEnteryId !== id) {
-                          return [...prev, data.uploadedFile];
-                        }
-                      });
-                    }
-                  })
-                );
+              if (responseData) {
+                setFileResponse((prev) => {
+                  const pevDaa = prev.filter((ite) => {
+                    return ite.fileEnteryId !== responseData.fileEnteryId;
+                  });
+                  return [...pevDaa, responseData];
+                });
               }
             })
             .then(() => {})
-            .catch((e) => console.log('file upload error--', e));
+            .catch((e) => {
+              console.log('file upload error--', e);
+              // setError(e);
+            });
         }
       });
     } catch (err) {
@@ -254,12 +269,13 @@ const EditMeetingGeneralScreen = () => {
     }
   }, []);
 
-  const removeFile = (id) => {
-    const filteredData = fileResponse?.filter(
-      (item) => item.fileEnteryId !== id
-    );
-    //Updating List Data State with NEW Data.
-    setFileResponse(filteredData);
+  const removeFile = (file) => {
+    setFileResponse((prev) => {
+      const pevDaa = prev.filter((ite) => {
+        return ite.fileEnteryId !== file.fileEnteryId;
+      });
+      return [...pevDaa];
+    });
   };
 
   return (
@@ -338,9 +354,11 @@ const EditMeetingGeneralScreen = () => {
                   key={index}
                   filePath={file.name}
                   fileSize={file.size}
-                  onDownloadPress={() => checkPermission(file.downloadUrl)}
+                  onDownloadPress={() => {
+                    checkPermission(file.downloadUrl);
+                  }}
                   fileType={file.type}
-                  onRemovePress={() => removeFile(file.fileEnteryId)}
+                  onRemovePress={() => removeFile(file)}
                   style={{
                     borderBottomWidth: SIZES[1],
                     borderBottomColor: Colors.Approved
@@ -359,6 +377,17 @@ const EditMeetingGeneralScreen = () => {
               }}
               onPress={() => handleDocumentSelection()}
             />
+            {error && (
+              <View
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Text>{error}</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>

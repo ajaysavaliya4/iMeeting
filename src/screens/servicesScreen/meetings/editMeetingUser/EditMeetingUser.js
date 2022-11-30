@@ -21,20 +21,62 @@ import UserCard from '../../../../component/Cards/userCard/UserCard';
 import { styles } from './styles';
 import { Fonts } from '../../../../themes';
 import { UserContext } from '../../../../context';
+import { GET_USER_BY_ID } from '../../../../graphql/query';
 
 const EditMeetingUser = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const [users, setUsers] = useState([]);
   const [searchText, setSearchText] = useState('');
-  const { selectedUsers } = useContext(UserContext);
+  const { selectedUsers, setSelectedUsers } = useContext(UserContext);
   const { attachFiles, committee, title, discription, item } = route?.params;
+  const [required, setRequired] = useState([]);
+  const [selected, setSelected] = useState(item.userDetails);
+  console.log('item from edit meeting', item);
   console.log('meeting data from user', {
     attachFiles,
     committee,
     title,
     discription
   });
+
+  useEffect(() => {
+    setSelectedUsers(item.userDetails);
+  }, []);
+
+  const userId = required?.map((item) => item.user);
+  console.log('userId', userId);
+  const userRequired = required?.map((item) => item.isRequired);
+  console.log('userRequired', userRequired);
+
+  // item?.userIds.map((id) => {
+  //   const getUser = useQuery(GET_USER_BY_ID, {
+  //     variables: {
+  //       userId: id
+  //     },
+  //     onCompleted: (data) => {
+  //       console.log('user from edit meeting users', data);
+  //       // setFileResponse((prev) => {
+  //       //   console.log('prev', prev);
+  //       //   const id = file.map((item) => {
+  //       //     return item.fileEnteryId;
+  //       //   });
+  //       //   console.log('id from inside', id);
+  //       //   console.log(
+  //       //     'fileEnteryId from inside',
+  //       //     data.uploadedFile.fileEnteryId
+  //       //   );
+  //       //   if (id != data.uploadedFile.fileEnteryId) {
+  //       //     file.push(data?.uploadedFile);
+  //       //     setFileResponse(file);
+  //       //   }
+  //       // });
+  //     }
+  //   });
+  //   if (getUser.error) {
+  //     console.log('getUser error', getUser.error);
+  //   }
+  // });
 
   useEffect(() => {
     if (selectedUsers.length > 0) {
@@ -46,6 +88,7 @@ const EditMeetingUser = () => {
   }, [selectedUsers]);
 
   console.log('userId', users);
+  console.log('user from editmeeting user', selectedUsers);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -119,10 +162,20 @@ const EditMeetingUser = () => {
 
         {selectedUsers?.length > 0 ? (
           <FlatList
-            data={selectedUsers || item.userDetails}
+            data={selectedUsers}
             keyExtractor={(item, index) => `${item.userId}`}
             renderItem={({ item, index }) => (
-              <UserCard item={item} index={index} text={searchText} />
+              <UserCard
+                item={item}
+                index={index}
+                text={searchText}
+                userSelect={true}
+                required={required}
+                setRequired={setRequired}
+                isSwitchOnRow={true}
+                deleted={false}
+                editable={item.roles == 'Head' || item.roles == 'secretary'}
+              />
             )}
             showsVerticalScrollIndicator={false}
           />
@@ -160,7 +213,8 @@ const EditMeetingUser = () => {
                 committee,
                 title,
                 discription,
-                users,
+                users: users,
+                userRequired: userRequired,
                 item: item
               })
             }

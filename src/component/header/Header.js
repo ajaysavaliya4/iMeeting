@@ -21,7 +21,6 @@ const Header = ({
   onRightPress,
   style
 }) => {
-  console.log(leftIconName, rightIconName);
   return (
     <View>
       {leftIconName || rightIconName ? (
@@ -49,8 +48,10 @@ const Header = ({
             style={[
               styles.txtHeader,
               {
-                marginLeft: rightIconName ? '8%' : '32%',
-                width: '30%'
+                marginLeft: rightIconName ? '8%' : '38%',
+                width: '30%',
+
+                alignSelf: 'center'
               }
             ]}
             numberOfLines={1}

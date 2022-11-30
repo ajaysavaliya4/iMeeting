@@ -1,5 +1,18 @@
-import { View, Text, SafeAreaView, TextInput, ScrollView } from 'react-native';
-import React, { useState, useCallback, useEffect } from 'react';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  TextInput,
+  ScrollView,
+  PermissionsAndroid,
+  Platform
+} from 'react-native';
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect
+} from 'react';
 import * as Progress from 'react-native-progress';
 import { useNavigation } from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
@@ -7,6 +20,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { Divider } from 'react-native-paper';
 import DocumentPicker from 'react-native-document-picker';
 import { useLazyQuery, useQuery } from '@apollo/client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { IconName } from '../../../../component';
 import { Colors } from '../../../../themes/Colors';
@@ -16,9 +30,9 @@ import { Button } from '../../../../component/button/Button';
 import Header from '../../../../component/header/Header';
 import { SIZES } from '../../../../themes/Sizes';
 import { styles } from './styles';
-import { GET_All_COMMITTEE, GET_FILE } from '../../../../graphql/query';
-import { BASE_URL } from '../../../../ApolloClient/Client';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GET_COMMITTEES_BY_ROLE, GET_FILE } from '../../../../graphql/query';
+import Loader from '../../../../component/Loader/Loader';
+import RNFetchBlob from 'rn-fetch-blob';
 
 const AddMeetingGeneralScreen = () => {
   const navigation = useNavigation();
@@ -29,13 +43,98 @@ const AddMeetingGeneralScreen = () => {
   const [committee, setCommittee] = useState(null);
   const [items, setItems] = useState([{ label: 'Design', value: 'design' }]);
   const [fileResponse, setFileResponse] = useState([]);
-  const [filesId, setFilesId] = useState([]);
+  const [filesId, setFilesId] = useState(null);
   const [token, setToken] = useState('');
-  let fileId = [];
-  let file = [];
-  console.log(filesId);
+
+  const [fetchFile, getFile] = useLazyQuery(GET_FILE);
+
+  // fetch commitees
+  const {
+    loading: CommitteeLoading,
+    error: CommitteeError,
+    data: CommitteeData
+  } = useQuery(GET_COMMITTEES_BY_ROLE, {
+    variables: { head: true, secretary: true, member: false },
+    onCompleted: (data) => {
+      console.log('committees by  role', data?.committeesByRole.items);
+      if (data) {
+        setCommittee(data?.committeesByRole?.items);
+      }
+    },
+    onError: (data) => {
+      console.log('commitee error', data);
+    }
+  });
+
+  useEffect(() => {
+    getToken();
+  }, [token]);
+
+  const getToken = async () => {
+    const user = await AsyncStorage.getItem('@user').catch((e) =>
+      console.log(e)
+    );
+    setToken(JSON.parse(user)?.dataToken);
+  };
+
+  const handleDocumentSelection = useCallback(async () => {
+    try {
+      const response = await DocumentPicker.pickMultiple({
+        presentationStyle: 'fullScreen',
+        type: [DocumentPicker.types.allFiles],
+        allowMultiSelection: true,
+        copyTo: 'cachesDirectory'
+      });
+      const url = await AsyncStorage.getItem('@url');
+      const user = await AsyncStorage.getItem('@token');
+
+      // console.log('file response', response);
+      console.log('token', user);
+      response.map((res) => {
+        if (res !== null) {
+          const formData = new FormData();
+          formData.append('file', res);
+          console.log('formdata', formData);
+          console.log('companyUrl', url);
+
+          fetch(`https://${url}//o/imeeting-rest/v1.0/file-upload`, {
+            method: 'POST',
+            headers: {
+              Authorization: 'Bearer ' + `${user}`,
+              'Content-Type': 'multipart/form-data'
+            },
+            body: formData
+          })
+            .then((response) => response.json())
+            .then((responseData) => {
+              console.log('response data', responseData);
+              if (responseData) {
+                setFileResponse((prev) => {
+                  const pevDaa = prev.filter((ite) => {
+                    return ite.fileEnteryId !== responseData.fileEnteryId;
+                  });
+                  return [...pevDaa, responseData];
+                });
+              }
+            })
+
+            .catch((e) => console.log('file upload error--', e));
+        }
+      });
+    } catch (err) {
+      console.log(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const fileId = fileResponse.map((file) => file.fileEnteryId);
+
+    setFilesId(fileId);
+  }, [fileResponse]);
+  console.log('file id', filesId);
 
   const checkPermission = async (file) => {
+    console.log('file', file);
     console.log('check permission');
     if (Platform.OS === 'ios') {
       downloadFile(file);
@@ -72,7 +171,7 @@ const AddMeetingGeneralScreen = () => {
     // Function to get extention of the file url
     let file_ext = getFileExtention(FILE_URL);
 
-    file_ext = '.' + file_ext[0];
+    // file_ext = '.' + file_ext[0];
 
     // config: To get response by passing the downloading related options
     // fs: Root directory path to download
@@ -84,8 +183,7 @@ const AddMeetingGeneralScreen = () => {
         path:
           RootDir +
           '/file_' +
-          Math.floor(date.getTime() + date.getSeconds() / 2) +
-          file_ext,
+          Math.floor(date.getTime() + date.getSeconds() / 2),
         description: 'downloading file...',
         notification: true,
         // useDownloadManager works with Android only
@@ -109,110 +207,13 @@ const AddMeetingGeneralScreen = () => {
     return /[.]/.exec(fileUrl) ? /[^.]+$/.exec(fileUrl) : undefined;
   };
 
-  const [fetchFile, getFile] = useLazyQuery(GET_FILE);
-
-  useEffect(() => {
-    if (filesId?.length > 0) {
-      filesId.map((id) =>
-        fetchFile({
-          variables: {
-            fileEntryId: id
-          },
-          onCompleted: (data) => {
-            console.log(data, 'inner file dartas');
-            // fileResponse.push(data.uploadedFile);
-            file.push(data?.uploadedFile);
-            setFileResponse(
-              file
-              // (prev) => {
-              // console.log('prev', prev);
-              // if (
-              //   fileResponse?.map((item) => item.fileEnteryId !== id)
-              // ) {
-              //   return [...prev, data.uploadedFile];
-              // }
-              // }
-            );
-          }
-        })
-      );
-    }
-  }, [filesId]);
-
-  // fetch commitees
-  const { loading: CommitteeLoading, error: CommitteeError } = useQuery(
-    GET_All_COMMITTEE,
-    {
-      variables: { isDeleted: true },
-      onCompleted: (data) => {
-        if (data) {
-          console.log('committees', data?.committees.items);
-          setCommittee(data.committees.items);
-        }
-      }
-    }
-  );
-  if (CommitteeError) {
-    console.log('commitee error', CommitteeError);
-  }
-
-  useEffect(() => {
-    getToken();
-  }, [token]);
-
-  const getToken = async () => {
-    const user = await AsyncStorage.getItem('@user').catch((e) =>
-      console.log(e)
-    );
-    setToken(JSON.parse(user)?.dataToken);
-  };
-
-  const handleDocumentSelection = useCallback(async () => {
-    try {
-      const response = await DocumentPicker.pick({
-        presentationStyle: 'fullScreen',
-        type: [DocumentPicker.types.allFiles],
-        allowMultiSelection: true
+  const removeFile = (file) => {
+    setFileResponse((prev) => {
+      const pevDaa = prev.filter((ite) => {
+        return ite.fileEnteryId !== file.fileEnteryId;
       });
-
-      response.map((res) => {
-        if (res !== null) {
-          const formData = new FormData();
-          formData.append('file', res);
-          console.log('formdata', formData);
-
-          fetch(`${BASE_URL}/o/imeeting-rest/v1.0/file-upload`, {
-            method: 'POST',
-            headers: {
-              Authorization: 'Bearer ' + `${token}`,
-              'Content-Type': 'multipart/form-data'
-            },
-            body: formData
-          })
-            .then((response) => response.json())
-            .then((responseData) => {
-              // setFileId(responseData?.fileEnteryId);
-              fileId.push(responseData?.fileEnteryId);
-              console.log('fileId', fileId);
-              setFilesId(fileId);
-            })
-            .then(() => {})
-            .catch((e) => console.log('file upload error--', e));
-        }
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
-
-  console.log('file response', fileResponse);
-
-  const removeFile = (id) => {
-    const filteredData = fileResponse?.filter(
-      (item) => item.fileEnteryId !== id
-    );
-    //Updating List Data State with NEW Data.
-    setFileResponse(filteredData);
+      return [...pevDaa];
+    });
   };
 
   return (
@@ -220,7 +221,12 @@ const AddMeetingGeneralScreen = () => {
       <Header
         name={'Add meeting'}
         rightIconName={IconName.Close}
-        onRightPress={() => navigation.goBack()}
+        onRightPress={() =>
+          navigation.navigate('Details', {
+            title: 'Meetings',
+            active: '0'
+          })
+        }
       />
 
       <View style={styles.subContainer}>
@@ -238,16 +244,19 @@ const AddMeetingGeneralScreen = () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {/* title */}
           <View style={styles.titleContainer}>
+            {CommitteeLoading && <Loader />}
             <Text style={styles.txtTitle}>CHOOSE COMMITTEE</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
               open={open}
               value={valueCommitee}
               items={
-                committee?.map((item) => ({
-                  label: item.committeeTitle,
-                  value: item.organizationId
-                })) || items
+                CommitteeData
+                  ? committee?.map((comm) => ({
+                      label: comm.committeeTitle,
+                      value: comm.organizationId
+                    }))
+                  : items
               }
               setOpen={setOpen}
               setValue={setValue}
@@ -284,15 +293,16 @@ const AddMeetingGeneralScreen = () => {
           <View style={{ marginTop: 24 }}>
             <Text style={styles.txtAttachFile}>ATTACH FILE</Text>
             {fileResponse?.map((file, index) => {
-              console.log('from retuen', file);
+              console.log('file from return', file);
+
               return (
                 <FilesCard
                   key={index}
                   filePath={file.name}
                   fileSize={file.size}
-                  onDownloadPress={() => checkPermission(file.downloadUrl)}
+                  onDownloadPress={() => downloadFile(file.downloadUrl)}
                   fileType={file.type}
-                  onRemovePress={() => removeFile(file.fileEnteryId)}
+                  onRemovePress={() => removeFile(file)}
                   style={{
                     borderBottomWidth: SIZES[1],
                     borderBottomColor: Colors.Approved
@@ -325,6 +335,11 @@ const AddMeetingGeneralScreen = () => {
         <Divider style={styles.divider} />
         <View style={styles.buttonContainer}>
           <Button
+            disable={
+              title == '' || discription == '' || valueCommitee == null
+                ? true
+                : false
+            }
             title={'Next'}
             onPress={() => {
               navigation.navigate('AddMeetingUser', {
@@ -336,9 +351,12 @@ const AddMeetingGeneralScreen = () => {
               // navigation.setParams();
             }}
             layoutStyle={[
-              // {
-              //     opacity: title === "" || discription === "" ? 0.5 : null,
-              // },
+              {
+                opacity:
+                  title === '' || discription === '' || valueCommitee == null
+                    ? 0.5
+                    : null
+              },
               styles.nextBtnLayout
             ]}
             textStyle={styles.txtNextBtn}

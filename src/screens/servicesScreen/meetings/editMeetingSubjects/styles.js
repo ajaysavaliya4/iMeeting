@@ -4,7 +4,7 @@ import { Colors } from '../../../../themes/Colors';
 import { SIZES } from '../../../../themes/Sizes';
 
 export const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, zIndex: 0 },
   subContainer: {
     paddingTop: SIZES[16],
     backgroundColor: Colors.white,

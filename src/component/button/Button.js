@@ -15,7 +15,7 @@ const _Button = ({
 }) => {
   return (
     <TouchableOpacity
-      activeOpacity={0.7}
+      // activeOpacity={0.7}
       onPress={onPress}
       disabled={disable}
       style={[style.layout, { backgroundColor: Colors.primary }, layoutStyle]}

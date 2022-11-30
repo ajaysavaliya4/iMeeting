@@ -41,8 +41,8 @@ const SelectUsers = () => {
       organizationId: committee
     },
     onCompleted: (data) => {
+      console.log('userdata', data.committeeMembersList);
       if (data) {
-        console.log('userdata', data.committeeMembersList.items);
         setUser(data?.committeeMembersList.items);
         setFilterData(data?.committeeMembersList.items);
       }
@@ -59,8 +59,8 @@ const SelectUsers = () => {
         searchValue: searchText
       },
       onCompleted: (data) => {
+        console.log('externaluserdata', data.committeeMembersList.items);
         if (data) {
-          console.log('externaluserdata', data.committeeMembersList.items);
           setExternalUser(data?.committeeMembersList.items);
         }
       }
@@ -91,8 +91,9 @@ const SelectUsers = () => {
         // });
         // selectedUsers.push(userId);
       }
+    } else {
+      setSelectedUsers(selectUser);
     }
-    setSelectedUsers(selectUser[0]);
   }, [selectAll, user, externalUser, selectUser]);
 
   return (
@@ -233,6 +234,7 @@ const SelectUsers = () => {
                   setSelectAll={setSelectAll}
                   selectAll={selectAll}
                   activeTab={activeTab}
+                  setSelectUser={setSelectUser}
                 />
               )}
               showsVerticalScrollIndicator={false}
@@ -261,7 +263,7 @@ const SelectUsers = () => {
                 />
                 <Button
                   title={'Add user'}
-                  onPress={() => navigation.navigate('AddMeetingUser')}
+                  onPress={() => navigation.goBack()}
                   layoutStyle={[
                     // {
                     //     opacity: title === "" || discription === "" ? 0.5 : null,
@@ -298,11 +300,12 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: SIZES[16],
     paddingHorizontal: SIZES[10],
     backgroundColor: Colors.gray,
     borderRadius: SIZES[10],
-    marginVertical: SIZES[22]
+    marginVertical: SIZES[22],
+    justifyContent: 'center'
+    // height: SIZES[36]
   },
   textInput: {
     ...Fonts.PoppinsRegular[14],
@@ -310,7 +313,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     flex: 1,
     marginHorizontal: SIZES[6],
-    marginVertical: SIZES[6]
+    // height: SIZES[36],
+    paddingVertical: 8
   },
   btnUsers: {
     paddingVertical: SIZES[8],

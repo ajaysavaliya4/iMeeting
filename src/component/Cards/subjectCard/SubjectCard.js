@@ -181,7 +181,11 @@ const SubjectCard = ({ item, index, searchText, search, role }) => {
               setEditModal(false);
             }}
             download={true}
-            editable={role == 'Head' || role == 'Secretory' ? true : false}
+            editable={
+              role == 'Head' || role == 'Secretory'
+                ? true
+                : false || (item.subjectStatus == 'Deleted' && false)
+            }
             deleted={role == 'Head' || role == 'Secretory' ? true : false}
           />
         </View>

@@ -4,7 +4,8 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  ScrollView
+  ScrollView,
+  FlatList
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import * as Progress from 'react-native-progress';
@@ -36,6 +37,7 @@ const EditMeetingSubjects = () => {
     title,
     discription,
     users,
+    userRequired,
     startDate,
     endDate,
     startTime,
@@ -52,6 +54,7 @@ const EditMeetingSubjects = () => {
     title,
     discription,
     users,
+    userRequired,
     startDate,
     endDate,
     startTime,
@@ -66,19 +69,28 @@ const EditMeetingSubjects = () => {
   console.log('selected subjects from add meeting subjects', selectedSubjects);
   const [calendarValue, setCalendarValue] = useState('5-11 September');
   const [searchText, setSearchText] = useState('');
-  const [filterData, setFilterData] = useState(subjectData);
+  const [filterData, setFilterData] = useState(selectedSubjects);
   const [subjectData, setSubjectData] = useState(selectedSubjects);
   const [subjectsId, setSubjectsId] = useState([]);
+  const [user, setUsers] = useState([]);
+  const [visibleIndex, setVisibleIndex] = useState(-1);
+  const [openIndex, setOpenIndex] = useState(-1);
 
   useEffect(() => {
-    if (selectedSubjects.length > 0) {
-      const subjectId = selectedSubjects?.map((subject) => {
-        return subject.subjectId;
-      });
-      subjectsId.push(subjectId);
-    }
+    const user = selectedSubjects?.map((item) => item.user);
+    console.log('userId', user);
+    setUsers(user);
   }, [selectedSubjects]);
-  console.log('subjectId', subjectsId);
+
+  // useEffect(() => {
+  //   if (selectedSubjects.length > 0) {
+  //     const subjectId = selectedSubjects?.map((subject) => {
+  //       return subject.subjectId;
+  //     });
+  //     subjectsId.push(subjectId);
+  //   }
+  // }, [selectedSubjects]);
+  // console.log('subjectId', subjectsId);
 
   const searchFilterSubject = (text) => {
     if (text) {
@@ -97,25 +109,27 @@ const EditMeetingSubjects = () => {
   };
 
   // get ALL SUBJECTS
-  // const {
-  //   loading: SubjectsLoading,
-  //   error: SubjectsError,
-  //   data: SubjectsData
-  // } = useQuery(GET_All_SUBJECTS, {
-  //   variables: {
-  //     searchValue: searchText
-  //   },
+  const {
+    loading: SubjectsLoading,
+    error: SubjectsError,
+    data: SubjectsData
+  } = useQuery(GET_All_SUBJECTS, {
+    variables: {
+      searchValue: searchText,
+      screen: 1,
+      committeeId: committee
+    },
 
-  //   onCompleted: (data) => {
-  //     setFilterData(data?.subjects.items);
-  //     console.log(data.subjects.items, 'commiitee by id');
-  //     setSubjectData(data?.subjects.items);
-  //   }
-  // });
+    onCompleted: (data) => {
+      setFilterData(data?.subjects.items);
+      console.log(data.subjects.items, 'commiitee by id');
+      setSubjectData(data?.subjects.items);
+    }
+  });
 
-  // if (SubjectsError) {
-  //   console.log('subjects error---', SubjectsError);
-  // }
+  if (SubjectsError) {
+    console.log('subjects error---', SubjectsError);
+  }
 
   const [addMeeting, { data, loading, error }] = useMutation(UPDATE_MEETING, {
     // export const GET_All_SUBJECTS = gql`
@@ -146,151 +160,181 @@ const EditMeetingSubjects = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header
-        name={'Edit meeting'}
-        rightIconName={IconName.Close}
-        onRightPress={() => navigation.goBack()}
-      />
-
-      <View style={styles.subContainer}>
-        <View style={styles.progressContainer}>
-          <Progress.Bar
-            color={Colors.switch}
-            progress={1}
-            borderColor={Colors.white}
-            unfilledColor={'#e6e7e9'}
-            width={DeviceInfo.isTablet() ? 800 : 264}
-          />
-          <Text style={styles.txtProgress}>Step 5/5</Text>
-        </View>
-        <Text style={styles.txtAddSubjectTitle}>Subjects</Text>
-
-        <View style={styles.searchContainer}>
-          <Icon name={IconName.Search} height={SIZES[12]} width={SIZES[12]} />
-          <TextInput
-            style={styles.textInput}
-            placeholder={'Search'}
-            onChangeText={(text) => searchFilterSubject(text)}
-          />
-          <TouchableOpacity>
-            <Icon
-              name={IconName.Speaker}
-              height={SIZES[15]}
-              width={SIZES[10]}
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => setVisibleIndex(-1)}
+        style={{ flex: 1 }}
+      >
+        <Header
+          name={'Edit meeting'}
+          rightIconName={IconName.Close}
+          onRightPress={() => navigation.goBack()}
+        />
+        <View style={styles.subContainer}>
+          <View style={styles.progressContainer}>
+            <Progress.Bar
+              color={Colors.switch}
+              progress={1}
+              borderColor={Colors.white}
+              unfilledColor={'#e6e7e9'}
+              width={DeviceInfo.isTablet() ? 800 : 264}
             />
-          </TouchableOpacity>
-        </View>
-        <Divider style={styles.divider} />
+            <Text style={styles.txtProgress}>Step 5/5</Text>
+          </View>
+          <Text style={styles.txtAddSubjectTitle}>Subjects</Text>
 
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {selectedSubjects?.map((subject, index) => {
-            return (
-              <AddSubjectsCard
-                item={subject}
-                searchText={searchText}
-                index={index}
-              />
-            );
-          })}
-          <View style={styles.deadlineContainer}>
-            <Text style={styles.txtTitle}>DEADLINE SUGGESTING</Text>
-            <TouchableOpacity
-              style={styles.deadlineRowContainer}
-              onPress={() => navigation.navigate('DeadlineSuggestion')}
-            >
-              <TextInput value={calendarValue} editable={false} />
+          <View style={styles.searchContainer}>
+            <Icon name={IconName.Search} height={SIZES[12]} width={SIZES[12]} />
+            <TextInput
+              style={styles.textInput}
+              placeholder={'Search'}
+              onChangeText={(text) => searchFilterSubject(text)}
+            />
+            <TouchableOpacity>
               <Icon
-                name={IconName.Calendar}
-                width={SIZES[18]}
-                height={SIZES[20]}
+                name={IconName.Speaker}
+                height={SIZES[15]}
+                width={SIZES[10]}
               />
             </TouchableOpacity>
+          </View>
+          <Divider style={styles.divider} />
 
-            <Divider style={styles.divider} />
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <FlatList
+              data={selectedSubjects}
+              keyExtractor={(item, index) => {
+                return `${item.subjectId}`;
+              }}
+              renderItem={({ item, index }) => {
+                return (
+                  <AddSubjectsCard
+                    item={item}
+                    searchText={searchText}
+                    index={index}
+                    visibleIndex={visibleIndex}
+                    setVisibleIndex={setVisibleIndex}
+                    openIndex={openIndex}
+                    setOpenIndex={setOpenIndex}
+                  />
+                );
+              }}
+            />
+            {/* {selectedSubjects?.map((subject, index) => {
+              return (
+                <AddSubjectsCard
+                  item={subject}
+                  searchText={searchText}
+                  index={index}
+                  visibleIndex={visibleIndex}
+                  setVisibleIndex={setVisibleIndex}
+                />
+              );
+            })} */}
+            <View style={styles.deadlineContainer}>
+              <Text style={styles.txtTitle}>DEADLINE SUGGESTING</Text>
+              <TouchableOpacity
+                style={styles.deadlineRowContainer}
+                onPress={() => navigation.navigate('DeadlineSuggestion')}
+              >
+                <TextInput value={calendarValue} editable={false} />
+                <Icon
+                  name={IconName.Calendar}
+                  width={SIZES[18]}
+                  height={SIZES[20]}
+                />
+              </TouchableOpacity>
+
+              <Divider style={styles.divider} />
+              <Button
+                title={'Select subjects'}
+                layoutStyle={styles.selectsubjectBtnLayout}
+                textStyle={styles.txtCancelButton}
+                onPress={() =>
+                  navigation.navigate('SelectSubjects', {
+                    committee: committee
+                  })
+                }
+              />
+            </View>
+          </ScrollView>
+        </View>
+        <View
+          style={{
+            backgroundColor: Colors.white,
+            justifyContent: 'flex-end'
+          }}
+        >
+          {/* Divider */}
+          <Divider style={styles.divider} />
+          <View
+            style={[styles.buttonContainer, { paddingHorizontal: SIZES[16] }]}
+          >
             <Button
-              title={'Select subjects'}
-              layoutStyle={styles.selectsubjectBtnLayout}
+              title={'Back'}
+              onPress={() => navigation.goBack()}
+              layoutStyle={styles.cancelBtnLayout}
               textStyle={styles.txtCancelButton}
-              onPress={() => navigation.navigate('SelectSubjects')}
+            />
+            <Button
+              title={'Submit'}
+              onPress={() => {
+                console.log('data on press', {
+                  attachFiles,
+                  committee,
+                  discription,
+                  endDate,
+                  endTime,
+                  location,
+                  title,
+                  platformlink: platform.platformlink,
+                  platformId: platform.platformId,
+                  Repeat,
+                  startDate,
+                  startTime,
+                  subjectid: subjectsId[0],
+                  TimeZone,
+                  users
+                });
+                addMeeting({
+                  variables: {
+                    meeting: {
+                      attachFileIds: attachFiles,
+                      committeeId: committee,
+                      creatorName: '',
+                      description: discription,
+                      endDate: endDate,
+                      endTime: endTime,
+                      locationId: location,
+                      meetingId: item.meetingId,
+                      meetingTitle: title,
+                      platformlink: platform.platformlink,
+                      platformId: platform.platformId,
+                      repeat: 0,
+                      repeatName: Repeat,
+                      required: userRequired,
+                      setDate: startDate,
+                      setTime: startTime,
+                      subjectIds: subjectsId[0],
+                      timeZone: TimeZone,
+                      userIds: users,
+                      subjectStatusIds: [],
+                      meetingStatusId: 0
+                    }
+                  }
+                });
+              }}
+              layoutStyle={[
+                // {
+                //     opacity: title === "" || discription === "" ? 0.5 : null,
+                // },
+                styles.nextBtnLayout
+              ]}
+              textStyle={styles.txtNextBtn}
             />
           </View>
-        </ScrollView>
-      </View>
-      <View
-        style={{
-          backgroundColor: Colors.white,
-          justifyContent: 'flex-end'
-        }}
-      >
-        {/* Divider */}
-        <Divider style={styles.divider} />
-        <View
-          style={[styles.buttonContainer, { paddingHorizontal: SIZES[16] }]}
-        >
-          <Button
-            title={'Back'}
-            onPress={() => navigation.goBack()}
-            layoutStyle={styles.cancelBtnLayout}
-            textStyle={styles.txtCancelButton}
-          />
-          <Button
-            title={'Submit'}
-            onPress={() => {
-              console.log('data on press', {
-                attachFiles,
-                committee,
-                discription,
-                endDate,
-                endTime,
-                location,
-                title,
-                platformlink: platform.platformlink,
-                platformId: platform.platformId,
-                Repeat,
-                startDate,
-                startTime,
-                subjectid: subjectsId[0],
-                TimeZone,
-                users
-              });
-              addMeeting({
-                variables: {
-                  meeting: {
-                    attachFileIds: attachFiles,
-                    committeeId: committee,
-                    creatorName: '',
-                    description: discription,
-                    endDate: endDate,
-                    endTime: endTime,
-                    locationId: location,
-                    meetingId: item.meetingId,
-                    meetingTitle: title,
-                    platformlink: platform.platformlink,
-                    platformId: platform.platformId,
-                    repeat: 0,
-                    repeatName: Repeat,
-                    required: [],
-                    setDate: startDate,
-                    setTime: startTime,
-                    subjectIds: subjectsId[0],
-                    timeZone: TimeZone,
-                    userIds: users,
-                    subjectStatusIds: [],
-                    meetingStatusId: 0
-                  }
-                }
-              });
-            }}
-            layoutStyle={[
-              // {
-              //     opacity: title === "" || discription === "" ? 0.5 : null,
-              // },
-              styles.nextBtnLayout
-            ]}
-            textStyle={styles.txtNextBtn}
-          />
         </View>
-      </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };

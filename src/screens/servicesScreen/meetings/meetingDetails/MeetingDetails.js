@@ -4,20 +4,26 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import React, { useState } from 'react';
+import moment from 'moment';
+import Clipboard from '@react-native-clipboard/clipboard';
+import RNFetchBlob from 'rn-fetch-blob';
+import { useMutation, useQuery } from '@apollo/client';
+import { useNavigation, useRoute } from '@react-navigation/native';
+
 import Header from '../../../../component/header/Header';
 import { Icon, IconName } from '../../../../component';
 import { styles } from './styles';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { SIZES } from '../../../../themes/Sizes';
 import { Colors } from '../../../../themes/Colors';
 import FilesCard from '../../../../component/Cards/FilesCard';
 import { Divider } from 'react-native-paper';
 import { Button } from '../../../../component/button/Button';
 import { Fonts } from '../../../../themes';
-import { useMutation, useQuery } from '@apollo/client';
+
 import {
   GET_ALL_LOCATION_BY_ID,
   GET_All_MEETING,
@@ -26,23 +32,50 @@ import {
   GET_MEETING_BY_ID,
   GET_PLATFORMLINK
 } from '../../../../graphql/query';
-import moment from 'moment';
-import { handleError } from '@apollo/client/link/http/parseAndCheckHttpResponse';
+
 import { DELETE_MEETING } from '../../../../graphql/mutation';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-import Clipboard from '@react-native-clipboard/clipboard';
 
 const MeetingDetails = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { item } = route?.params;
-  console.log(item);
+  console.log('item', item);
   const [fileResponse, setFileResponse] = useState(null);
   const [meeting, setMeeting] = useState(null);
   const [location, setLocation] = useState(null);
   const [committe, setCommittee] = useState(null);
   const [platform, setPlatform] = useState(null);
   const [role, setRole] = useState('');
+  let file = [];
+
+  item?.attachFileIds.map((id) => {
+    const getFile = useQuery(GET_FILE, {
+      variables: {
+        fileEntryId: id
+      },
+      onCompleted: (data) => {
+        console.log('file from meeting details', data);
+        setFileResponse((prev) => {
+          console.log('prev', prev);
+          const id = file.map((item) => {
+            return item.fileEnteryId;
+          });
+          console.log('id from inside', id);
+          console.log(
+            'fileEnteryId from inside',
+            data.uploadedFile.fileEnteryId
+          );
+          if (id != data.uploadedFile.fileEnteryId) {
+            file.push(data?.uploadedFile);
+            setFileResponse(file);
+          }
+        });
+      }
+    });
+    if (getFile.error) {
+      console.log('File error', getFile.error);
+    }
+  });
 
   const checkPermission = async (file) => {
     console.log('check permission');
@@ -105,7 +138,7 @@ const MeetingDetails = () => {
       .fetch('GET', FILE_URL)
       .then((res) => {
         // Alert after successful downloading
-        console.log('res -> ', res.respInfo.redirects[0]);
+        // console.log('res -> ', res.respInfo.redirects[0]);
         alert('File Downloaded Successfully.');
         if (Platform.OS == 'ios') {
           RNFetchBlob.ios.openDocument(res.respInfo.redirects[0]);
@@ -124,8 +157,8 @@ const MeetingDetails = () => {
       meetingId: item.meetingId
     },
     onCompleted: (data) => {
+      console.log('meeting by id', data.meeting);
       if (data) {
-        console.log('get meeting by id', data);
         setMeeting(data.meeting);
         setRole(data.meeting.yourRoleName);
       }
@@ -135,14 +168,12 @@ const MeetingDetails = () => {
     }
   });
 
-  console.log('item', meeting?.attachFileIds);
-
   const start = moment(
-    `${meeting.setDate},${meeting?.setTime}`,
+    `${meeting?.setDate},${meeting?.setTime}`,
     'YYYY-MM-DD,hh:mm A'
   );
   const end = moment(
-    `${meeting.endDate},${meeting?.endTime}`,
+    `${meeting?.endDate},${meeting?.endTime}`,
     'YYYY-MM-DD,hh:mm A'
   );
 
@@ -152,28 +183,7 @@ const MeetingDetails = () => {
 
   const hours = parseInt(duration.asHours());
 
-  // meeting?.attachFileIds.map((id) => {
-  //   const getFile = useQuery(GET_FILE, {
-  //     variables: {
-  //       fileEntryId: id
-  //     },
-  //     onCompleted: (data) => {
-  //       console.log(data);
-  //       // setFileResponse((prev) => {
-  //       //   console.log('prev', prev);
-  //       //   if (prev.fileEnteryId !== id) {
-  //       //     return [...prev, data.uploadedFile];
-  //       //   }
-  //       // });
-  //     }
-  //   });
-  //   if (getFile.data) {
-  //     console.log('File', getFile.data);
-  //   }
-  //   if (getFile.error) {
-  //     console.log('File error', getFile.error);
-  //   }
-  // });
+  console.log('file id', meeting?.attachFileIds);
 
   // get location
   const Location = useQuery(GET_ALL_LOCATION_BY_ID, {
@@ -197,6 +207,7 @@ const MeetingDetails = () => {
     },
     onCompleted: (data) => {
       if (data) {
+        console.log('platform link', data.videoConferencePlatformLink);
         setPlatform(data.videoConferencePlatformLink);
       }
     },
@@ -318,38 +329,50 @@ const MeetingDetails = () => {
           {role == 'Member' && details('Required', 'Yes')}
           {role == 'Member' && (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {details('Your answer', 'Your suggestion time')}
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  marginTop: 48,
-                  marginLeft: SIZES[8]
-                }}
-              >
-                <Text
-                  style={{ ...Fonts.PoppinsSemiBold[14], color: Colors.bold }}
-                >
-                  03:00 PM
-                </Text>
-                <TouchableOpacity
-                  style={{
-                    marginLeft: SIZES[16],
-                    borderBottomWidth: 1,
-                    borderBottomColor: Colors.primary
-                  }}
-                  onPress={() => navigation.navigate('YourAnswer', { item })}
-                >
-                  <Text
+              {item.answers == 'Suggest time' ? (
+                <View>
+                  {details('Your answer', 'Your suggestion time')}
+                  <View
                     style={{
-                      ...Fonts.PoppinsSemiBold[14],
-                      color: Colors.primary
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      marginTop: 48,
+                      marginLeft: SIZES[8]
                     }}
                   >
-                    Edit
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                    <Text
+                      style={{
+                        ...Fonts.PoppinsSemiBold[14],
+                        color: Colors.bold
+                      }}
+                    >
+                      03:00 PM
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                details(
+                  'Your answer',
+                  item.answers ? item.answers : 'No answers'
+                )
+              )}
+              <TouchableOpacity
+                style={{
+                  marginLeft: SIZES[16],
+                  borderBottomWidth: 1,
+                  borderBottomColor: Colors.primary
+                }}
+                onPress={() => navigation.navigate('YourAnswer', { item })}
+              >
+                <Text
+                  style={{
+                    ...Fonts.PoppinsSemiBold[14],
+                    color: Colors.primary
+                  }}
+                >
+                  Edit
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -409,7 +432,6 @@ const MeetingDetails = () => {
             <Text style={styles.txtAttachFile}>ATTACH FILE</Text>
             {fileResponse?.length > 0 ? (
               fileResponse?.map((file, index) => {
-                console.log('from retuen', file);
                 return (
                   <FilesCard
                     key={index}
@@ -433,7 +455,11 @@ const MeetingDetails = () => {
           <TouchableOpacity
             style={styles.committeeView}
             activeOpacity={0.5}
-            onPress={() => navigation.navigate('Users')}
+            onPress={() =>
+              navigation.navigate('Users', {
+                userDetails: meeting?.userDetails
+              })
+            }
           >
             <Text style={styles.txtCommittee}>Users</Text>
             <View style={styles.btnCommittees}>
@@ -451,7 +477,12 @@ const MeetingDetails = () => {
           <TouchableOpacity
             style={styles.committeeView}
             activeOpacity={0.5}
-            onPress={() => navigation.navigate('subjects')}
+            onPress={() =>
+              navigation.navigate('subjects', {
+                subjectId: meeting?.subjectIds,
+                role
+              })
+            }
           >
             <Text style={styles.txtCommittee}>Subjects</Text>
             <View style={styles.btnCommittees}>

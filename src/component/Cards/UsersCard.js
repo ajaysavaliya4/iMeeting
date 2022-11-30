@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Divider, Switch } from 'react-native-paper';
 import { PreventRemoveContext, useNavigation } from '@react-navigation/native';
 
@@ -12,6 +12,7 @@ import Avatar from '../Avatar/Avatar';
 import EditDeleteModal from '../EditDeleteModal';
 import CheckBox from '../checkBox/CheckBox';
 import { getHighlightedText } from '../highlitedText/HighlitedText';
+import { UserContext } from '../../context';
 
 const UsersCard = ({
   item,
@@ -30,39 +31,34 @@ const UsersCard = ({
   const [isSwitchOn, setIsSwitchOn] = useState(false);
   const [isCheckAll, setIsCheckAll] = useState(false);
   const [user, setUser] = useState([]);
+  const { selectedUsers } = useContext(UserContext);
   let user_list = [];
 
   useEffect(() => {
     if (isCheckAll) {
-      // setUser([...user, item]);
-      user_list.push(item);
       setSelectUser((pre) => {
-        return [...pre, user_list];
+        return [...pre, item];
       });
     } else {
-      // let user_list = [];
-      selectUser.filter((ite) => {
+      selectUser?.filter((ite) => {
         ite.userId != item.userId;
       });
-      // setUser(user_list);
     }
-
-    // if (!isCheckAll) {
-    //   const removeUser = user.filter((list) => {
-    //     return list.userId !== item.userId;
-    //   });
-    //   setUser([...user, removeUser]);
-    // }
   }, [isCheckAll]);
 
-  console.log('user', user);
+  useEffect(() => {
+    selectedUsers.map((user) => {
+      if (user.userId == item.userId) {
+        setIsCheckAll(isCheckAll ? false : true);
+      }
+    });
+  }, [isCheckAll]);
 
   const onDeleteHandler = () => {
-    setEditModal(false);
     Alert.alert('Delete Subject', 'Are you sure you want to delete this?', [
       {
         text: 'Delete',
-        onPress: () => console.log('delete Pressed'),
+        // onPress: () => console.log('delete Pressed'),
         style: 'destructive'
       },
       {
@@ -82,7 +78,7 @@ const UsersCard = ({
           <Switch
             color={Colors.switch}
             value={item.privateDetails}
-            // onValueChange={() => setIsSwitchOn(!isSwitchOn)}
+            onValueChange={() => setIsSwitchOn(!isSwitchOn)}
           />
         ) : (
           <Text style={styles.discription} numberOfLines={1}>
@@ -91,14 +87,6 @@ const UsersCard = ({
         )}
       </View>
     );
-  };
-
-  const handleSelectAll = (e) => {
-    setSelectAll(!selectAll);
-    setIsCheck(item?.map((li) => li.userId));
-    if (selectAll) {
-      console.log('select all user', item);
-    }
   };
 
   return (
@@ -135,7 +123,7 @@ const UsersCard = ({
             )}
           </View>
           <CheckBox
-            // value={selectAllUser || selectAllExternal ? true : selectUser}
+            // value={selectUser || selectAllExternal ? true : selectUser}
             onValueChange={() => {
               allUserButton
                 ? setSelectAll(!selectAll)

@@ -31,7 +31,6 @@ import {
 import { UPDATE_SUBJECTS } from '../../../../graphql/mutation';
 import Loader from '../../../../component/Loader/Loader';
 import { SIZES } from '../../../../themes/Sizes';
-import { BASE_URL } from '../../../../ApolloClient/Client';
 
 const AddDraftSubject = () => {
   const navigation = useNavigation();
@@ -122,13 +121,14 @@ const AddDraftSubject = () => {
         type: [DocumentPicker.types.allFiles]
       });
       console.log('file response', response);
+      const url = await AsyncStorage.getItem('@url');
       response.map((res) => {
         if (res !== null) {
           const formData = new FormData();
           formData.append('file', res);
           console.log('formdata', formData);
 
-          fetch(`${BASE_URL}/o/imeeting-rest/v1.0/file-upload`, {
+          fetch(`https://${url}//o/imeeting-rest/v1.0/file-upload`, {
             method: 'POST',
             headers: {
               Authorization: 'Bearer ' + `${token}`,

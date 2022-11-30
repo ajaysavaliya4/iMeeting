@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { styles } from './styles';
 import Header from '../../../../component/header/Header';
 import { Icon, IconName } from '../../../../component';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { SIZES } from '../../../../themes/Sizes';
 import { Divider } from 'react-native-paper';
 import { subjectData } from '../../../../Constans/data';
@@ -19,12 +19,17 @@ import { Button } from '../../../../component/button/Button';
 import { Colors } from '../../../../themes/Colors';
 import { useQuery } from '@apollo/client';
 import { GET_All_SUBJECTS } from '../../../../graphql/query';
+import Loader from '../../../../component/Loader/Loader';
 
 const SelectSubjects = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { committee } = route?.params;
+  console.log('committee from select subjects', committee);
   const [searchText, setSearchText] = useState('');
   const [subjectData, setSubjectData] = useState([]);
   const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [visibleIndex, setVisibleIndex] = useState(-1);
   console.log('selectedSubjects', selectedSubjects);
 
   const {
@@ -34,12 +39,13 @@ const SelectSubjects = () => {
   } = useQuery(GET_All_SUBJECTS, {
     variables: {
       searchValue: searchText,
-      screen: 1
+      screen: 1,
+      committeeId: committee
     },
 
     onCompleted: (data) => {
       // setFilterData(data?.subjects.items);
-      console.log(data.subjects.items, 'commiitee by id');
+      console.log(data.subjects.items, 'get all subjects');
       setSubjectData(data?.subjects.items);
     }
   });
@@ -47,14 +53,6 @@ const SelectSubjects = () => {
   if (SubjectsError) {
     console.log('subjects error---', SubjectsError);
   }
-  useEffect(() => {
-    // const newData = subjectData?.map((subject) => {
-    //   if (subject.subjectId !== selectedSubjects?.subjectId) {
-    //     return [...subject, selectedSubjects];
-    //   }
-    // });
-    // console.log(newData);
-  }, [selectedSubjects]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -63,7 +61,7 @@ const SelectSubjects = () => {
         rightIconName={IconName.Add}
         leftIconName={IconName.Arrow_Left}
         onLeftPress={() => navigation.goBack()}
-        onRightPress={() => navigation.navigate('AddSubject')}
+        onRightPress={() => navigation.navigate('AddSubject', { committee })}
       />
       <View style={styles.subContainer}>
         <View style={styles.searchContainer}>
@@ -97,20 +95,34 @@ const SelectSubjects = () => {
           </View>
         </TouchableOpacity>
         <Divider style={styles.divider} />
-        <FlatList
-          data={subjectData}
-          showsVerticalScrollIndicator={false}
-          keyExtractor={(item, index) => `${index}`}
-          renderItem={({ item, index }) => (
-            <SelectSubjectCard
-              item={item}
-              index={index}
-              searchText={searchText}
-              selectedSubjects={selectedSubjects}
-              setSelectedSubjects={setSelectedSubjects}
-            />
-          )}
-        />
+        {SubjectsLoading ? (
+          <Loader />
+        ) : SubjectsError ? (
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <Text>{SubjectsError.message}</Text>
+          </View>
+        ) : subjectData.length > 0 ? (
+          <FlatList
+            data={subjectData}
+            showsVerticalScrollIndicator={false}
+            keyExtractor={(item, index) => `${item.subjectId}`}
+            renderItem={({ item, index }) => (
+              <SelectSubjectCard
+                item={item}
+                index={index}
+                searchText={searchText}
+                selectedSubjects={selectedSubjects}
+                setSelectedSubjects={setSelectedSubjects}
+                visibleIndex={visibleIndex}
+                setVisibleIndex={setVisibleIndex}
+              />
+            )}
+          />
+        ) : (
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <Text>No subjects found</Text>
+          </View>
+        )}
       </View>
       <View
         style={{

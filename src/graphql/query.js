@@ -1,5 +1,103 @@
 import { gql } from '@apollo/client';
 
+export const GET_TASK_STATUS = gql`
+  query taskStatus {
+    taskStatus {
+      items {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const GET_TASK_TYPES = gql`
+  query taskType {
+    taskType {
+      items {
+        id
+        name
+      }
+    }
+  }
+`;
+
+export const GET_ALL_TASKS = gql`
+  query tasks(
+    $onlyMyTask: Boolean
+    $page: Int
+    $pageSize: Int
+    $searchValue: String
+    $sort: String
+    $taskStatusIds: String
+    $taskTypeIds: String
+    $date: String
+  ) {
+    tasks(
+      onlyMyTask: $onlyMyTask
+      page: $page
+      pageSize: $pageSize
+      searchValue: $searchValue
+      sort: $sort
+      taskStatusIds: $taskStatusIds
+      taskTypeIds: $taskTypeIds
+      date: $date
+    ) {
+      items {
+        taskId
+        attachFiles
+        committeeId
+        createBy
+        deadlineDate
+        description
+        executorId
+        executorName
+        meetingId
+        priority
+        priorityId
+        subjectId
+        taskStatusId
+        taskStatus
+        taskType
+        taskTypeId
+        title
+        userId
+        isHead
+        isExecutor
+        isTaskApproval
+        isMeetingApproval
+        isSubjectApproval
+      }
+      totalCount
+      pageSize
+    }
+  }
+`;
+
+export const GET_TIMELINE_REVIEW = gql`
+  query timeReviewMobile(
+    $startTime: String
+    $endTime: String
+    $date: String
+    $requiredUserIds: String
+    $optionalUserIds: String
+    $timeStart: String
+    $timeEnd: String
+  ) {
+    timeReviewMobile(
+      startTime: $startTime
+      endTime: $endTime
+      date: $date
+      requiredUserIds: $requiredUserIds
+      optionalUserIds: $optionalUserIds
+      timeStart: $timeStart
+      timeEnd: $timeEnd
+    ) {
+      userEvents
+    }
+  }
+`;
+
 export const GET_ALL_SUBJECTS_STATUS = gql`
   query subjectStatus {
     subjectStatus {
@@ -130,6 +228,30 @@ export const GET_All_USERS = gql`
       page
       pageSize
       totalCount
+    }
+  }
+`;
+
+export const GET_USER_BY_ID = gql`
+  query committeeMemberById($userId: Long) {
+    committeeMemberById(userId: $userId) {
+      title
+      attachFiles
+      emails
+      externalUser
+      familyName
+      firstName
+      googleCalendarSync
+      organizations
+      outlookCalendarSync
+      phoneNumber
+      privateDetails
+      profilePicture
+      roles
+      secondName
+      sendSMS
+      thirdName
+      userId
     }
   }
 `;
@@ -311,6 +433,34 @@ export const GET_COMMITTEE_BY_ID = gql`
   }
 `;
 
+export const GET_COMMITTEES_BY_ROLE = gql`
+  query committeesByRole(
+    $head: Boolean
+    $member: Boolean
+    $secretary: Boolean
+  ) {
+    committeesByRole(head: $head, member: $member, secretary: $secretary) {
+      items {
+        categoryTitle
+        children
+        committeeId
+        committeeTitle
+        createBy
+        description
+        expirationDate
+        isDisable
+        organizationId
+        parentCommitteeId
+        setUpDate
+        status
+        title
+        userIds
+        attachDocumentIds
+      }
+    }
+  }
+`;
+
 export const GET_All_COMMENTS_THREAD = gql`
   query comments($commentCategoryId: Long, $sort: String) {
     comments(commentCategoryId: $commentCategoryId, sort: $sort) {
@@ -372,6 +522,7 @@ export const GET_All_MEETING = gql`
       screen: $screen
     ) {
       items {
+        attachFileIds
         committeeId
         creatorName
         description
@@ -390,6 +541,7 @@ export const GET_All_MEETING = gql`
         answers
         meetingStatusTitle
         yourRoleName
+        platformlink
         userDetails {
           answer
           appointmentId
@@ -433,6 +585,8 @@ export const GET_MEETING_BY_ID = gql`
       subjectStatusIds
       timeZone
       userIds
+      setTime
+      endTime
       workHours
       yourRoleName
       userDetails {

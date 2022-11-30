@@ -29,6 +29,7 @@ const EditMeetingLocation = () => {
     title,
     discription,
     users,
+    userRequired,
     startDate,
     endDate,
     startTime,
@@ -43,6 +44,7 @@ const EditMeetingLocation = () => {
     title,
     discription,
     users,
+    userRequired,
     startDate,
     endDate,
     startTime,
@@ -96,10 +98,10 @@ const EditMeetingLocation = () => {
     },
 
     onCompleted: (data) => {
-      console.log('get platform link', data.videoConferencePlateformLink);
+      console.log('get platform link', data.videoConferencePlatformLink);
       // setSubjectData(data?.subjects.items);
       if (data) {
-        setPlatform(data?.videoConferencePlateformLink);
+        setPlatform(data?.videoConferencePlatformLink);
       }
     }
   });
@@ -189,7 +191,9 @@ const EditMeetingLocation = () => {
           />
           <Button
             title={'Add location'}
-            onPress={() => navigation.navigate('AddLocation')}
+            onPress={() =>
+              navigation.navigate('AddLocation', { locationType: 1 })
+            }
             layoutStyle={[
               // {
               //     opacity: title === "" || discription === "" ? 0.5 : null,
@@ -267,6 +271,7 @@ const EditMeetingLocation = () => {
                 title,
                 discription,
                 users,
+                userRequired,
                 startDate,
                 endDate,
                 startTime,

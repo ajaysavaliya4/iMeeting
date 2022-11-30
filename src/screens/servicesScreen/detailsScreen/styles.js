@@ -7,6 +7,11 @@ export const styles = StyleSheet.create({
   container: {
     flex: 1
   },
+  modalView: {
+    position: 'absolute',
+    top: SIZES[60],
+    right: SIZES[8]
+  },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',

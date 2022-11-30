@@ -20,7 +20,9 @@ import { UserContext } from '../../../context';
 const SelectSubjectCard = ({
   item,
   index,
-  searchText
+  searchText,
+  visibleIndex,
+  setVisibleIndex
   // selectedSubjects,
   // setSelectedSubjects
 }) => {
@@ -33,7 +35,19 @@ const SelectSubjectCard = ({
 
   useEffect(() => {
     if (isCheck) {
-      setSelectedSubjects([item]);
+      setSelectedSubjects((prev) => {
+        const pevDaa = prev.filter((ite) => {
+          return ite.subjectId !== item.subjectId;
+        });
+        return [...pevDaa, item];
+      });
+    } else {
+      setSelectedSubjects((prev) => {
+        const pevDaa = prev.filter((ite) => {
+          return ite.subjectId !== item.subjectId;
+        });
+        return [...pevDaa, item];
+      });
     }
   }, [isCheck]);
 
@@ -43,7 +57,9 @@ const SelectSubjectCard = ({
     return (
       <View style={styles.container}>
         <Text style={styles.txtCommitteeName}>{name}</Text>
-        <Text style={styles.discription}>{discription}</Text>
+        <Text style={styles.discription} numberOfLines={1}>
+          {discription}
+        </Text>
       </View>
     );
   };
@@ -51,7 +67,7 @@ const SelectSubjectCard = ({
     <TouchableOpacity
       key={index}
       activeOpacity={1}
-      onPress={() => setEditModal(false)}
+      onPress={() => setVisibleIndex(-1)}
     >
       {/* committee details */}
       <Text style={{ marginLeft: SIZES[12], marginTop: SIZES[24] }}>
@@ -59,7 +75,7 @@ const SelectSubjectCard = ({
       </Text>
       {/* <Text style={styles.txtCommitteeTitle}>{item.subjectTitle}</Text> */}
       <View style={styles.userDetailsContainer}>
-        <View>
+        <View style={{ width: '50%' }}>
           <RowData name={'ID'} discription={item.subjectId} />
           <RowData name={'Category'} discription={item.subjectCategoryName} />
           <RowData name={'Creator'} discription={item.createrName} />
@@ -74,12 +90,12 @@ const SelectSubjectCard = ({
 
       {/* dotsView */}
       <TouchableOpacity
-        onPress={() => setEditModal(!editModal)}
+        onPress={() => setVisibleIndex(!visibleIndex ? -1 : index)}
         style={styles.dotsView}
       >
         <Icon name={IconName.Dots} height={SIZES[16]} width={SIZES[4]} />
       </TouchableOpacity>
-      {editModal && (
+      {visibleIndex == index && (
         <View style={styles.modalView}>
           <EditDeleteModal download={false} />
         </View>

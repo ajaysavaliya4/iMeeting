@@ -7,35 +7,27 @@ import {
   Alert,
   FlatList
 } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import React, { useState } from 'react';
+import moment from 'moment';
+import { useMutation, useQuery } from '@apollo/client';
+import { Divider } from 'react-native-paper';
+
 import Header from '../../../../component/header/Header';
 import { Icon, IconName } from '../../../../component';
 import { styles } from './styles';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { SIZES } from '../../../../themes/Sizes';
 import { Colors } from '../../../../themes/Colors';
 import FilesCard from '../../../../component/Cards/FilesCard';
-import { Divider } from 'react-native-paper';
 import { Button } from '../../../../component/button/Button';
 import { Fonts } from '../../../../themes';
-import { useMutation, useQuery } from '@apollo/client';
+
 import {
   GET_All_APPOINTMENT,
-  GET_ALL_LOCATION_BY_ID,
-  GET_All_MEETING,
-  GET_APPOINTMENT_BY_ID,
-  GET_COMMITTEE_BY_ID,
-  GET_FILE,
-  GET_MEETING_BY_ID,
-  GET_PLATFORMLINK
+  GET_APPOINTMENT_BY_ID
 } from '../../../../graphql/query';
-import moment from 'moment';
-import { handleError } from '@apollo/client/link/http/parseAndCheckHttpResponse';
-import {
-  DELETE_APPOINTMENT,
-  DELETE_MEETING
-} from '../../../../graphql/mutation';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+
+import { DELETE_APPOINTMENT } from '../../../../graphql/mutation';
 import UserCard from '../../../../component/Cards/userCard/UserCard';
 import Clipboard from '@react-native-clipboard/clipboard';
 
@@ -412,14 +404,21 @@ const AppointmentsDetails = () => {
           <View style={{ marginTop: SIZES[40] }}>
             <Text style={styles.txtTitle}>Users</Text>
             <Divider style={[styles.divider, { marginVertical: SIZES[24] }]} />
-            {appointment?.userDetails.length > 0 ? (
+            {appointment?.userDetails?.length > 0 ? (
               <FlatList
                 data={appointment?.userDetails}
                 keyExtractor={(item) => `${item.userId}
             `}
                 renderItem={({ item, index }) => {
                   return (
-                    <UserCard item={item} index={index} isSwitchOnRow={false} />
+                    <UserCard
+                      item={item}
+                      index={index}
+                      isSwitchOnRow={true}
+                      userSelect={true}
+                      text={''}
+                      setRequired={() => {}}
+                    />
                   );
                 }}
               />

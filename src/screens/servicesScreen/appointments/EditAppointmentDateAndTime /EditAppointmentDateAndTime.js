@@ -28,15 +28,23 @@ import { GET_TIMEZONE } from '../../../../graphql/query';
 const EditAppointmentDateAndTime = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { attachFiles, committee, title, discription, users, item } =
-    route?.params;
+  const {
+    attachFiles,
+    committee,
+    title,
+    discription,
+    users,
+    item,
+    userRequired
+  } = route?.params;
   console.log('meeting data from date and time', {
     attachFiles,
     committee,
     title,
     discription,
     users,
-    item
+    item,
+    userRequired
   });
   const [startDate, setStartdate] = useState(
     moment(item.setDate).format('DD MMM,YYYY')
@@ -53,6 +61,9 @@ const EditAppointmentDateAndTime = () => {
   );
   const [endTime, setEndTime] = useState(item.endTime);
   const [timeZone, setTimeZone] = useState([]);
+  const [date, setDate] = useState(new Date());
+  const [dates, setDates] = useState(new Date());
+  const [time, setTime] = useState(new Date());
   const [openCalendar, setOpenCalendar] = useState(false);
   const [openClock, setOpenClock] = useState(false);
   const [value, setValue] = useState('');
@@ -71,6 +82,8 @@ const EditAppointmentDateAndTime = () => {
     console.log('time', time);
     if (value == 'startTime') {
       setStartTime(time);
+      setEndTime(time);
+      setTime(date);
     }
     if (value == 'endTime') {
       setEndTime(time);
@@ -87,10 +100,14 @@ const EditAppointmentDateAndTime = () => {
     if (value == 'startDate') {
       setStartdate(Date);
       setStartNewDate(newDate);
+      setDates(date);
+      setEnddate(Date);
+      setDate(date);
     }
     if (value == 'endDate') {
       setEnddate(Date);
       setEndNewdate(newDate);
+      setDate(date);
     }
   };
 
@@ -220,6 +237,7 @@ const EditAppointmentDateAndTime = () => {
             <Text style={styles.txtTitle}>TIMEZONE</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
+              dropDownDirection="TOP"
               open={openTimeZone}
               value={valueTimeZone}
               items={timeZone?.map((item) => ({
@@ -253,6 +271,7 @@ const EditAppointmentDateAndTime = () => {
             <Text style={styles.txtTitle}>REPEAT</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
+              dropDownDirection="TOP"
               open={openRepeat}
               value={valueRepeat}
               items={[
@@ -306,6 +325,8 @@ const EditAppointmentDateAndTime = () => {
           mode="date"
           onConfirm={handleConfirmCalendar}
           onCancel={() => setOpenCalendar(false)}
+          minimumDate={value === 'startDate' ? new Date() : dates}
+          date={value === 'startDate' ? dates : date}
         />
         {/* {openCalendar && (
           <RNDateTimePicker
@@ -359,6 +380,7 @@ const EditAppointmentDateAndTime = () => {
                 title,
                 discription,
                 users,
+                userRequired,
                 startDate: startNewDate,
                 endDate: endNewDate,
                 startTime: startTime,

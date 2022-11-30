@@ -45,11 +45,12 @@ const AddAppointmentDateAndTime = () => {
   const [endNewDate, setEndNewdate] = useState(
     moment(new Date()).format('YYYY-MM-DD')
   );
-  const [startTime, setStartTime] = useState('08:00 PM');
-  const [endDate, setEnddate] = useState(
-    moment(new Date()).format('DD MMM,YYYY')
-  );
-  const [endTime, setEndTime] = useState('08:00 PM');
+  const [startTime, setStartTime] = useState(moment(new Date()).format('LT'));
+  const [endDate, setEnddate] = useState(startDate);
+  const [endTime, setEndTime] = useState(moment(new Date()).format('LT'));
+  const [date, setDate] = useState(new Date());
+  const [dates, setDates] = useState(new Date());
+  const [time, setTime] = useState(new Date());
   const [timeZone, setTimeZone] = useState([]);
   const [openCalendar, setOpenCalendar] = useState(false);
   const [openClock, setOpenClock] = useState(false);
@@ -69,6 +70,8 @@ const AddAppointmentDateAndTime = () => {
     console.log('time', time);
     if (value == 'startTime') {
       setStartTime(time);
+      setEndTime(time);
+      setTime(date);
     }
     if (value == 'endTime') {
       setEndTime(time);
@@ -85,10 +88,14 @@ const AddAppointmentDateAndTime = () => {
     if (value == 'startDate') {
       setStartdate(Date);
       setStartNewDate(newDate);
+      setDates(date);
+      setEnddate(Date);
+      setDate(date);
     }
     if (value == 'endDate') {
       setEnddate(Date);
       setEndNewdate(newDate);
+      setDate(date);
     }
   };
 
@@ -218,6 +225,7 @@ const AddAppointmentDateAndTime = () => {
             <Text style={styles.txtTitle}>TIMEZONE</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
+              dropDownDirection="TOP"
               open={openTimeZone}
               value={valueTimeZone}
               items={timeZone?.map((item) => ({
@@ -252,6 +260,7 @@ const AddAppointmentDateAndTime = () => {
             <Text style={styles.txtTitle}>REPEAT</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
+              dropDownDirection="TOP"
               open={openRepeat}
               value={valueRepeat}
               items={[
@@ -306,34 +315,19 @@ const AddAppointmentDateAndTime = () => {
           mode="date"
           onConfirm={handleConfirmCalendar}
           onCancel={() => setOpenCalendar(false)}
+          minimumDate={value === 'startDate' ? new Date() : dates}
+          date={value === 'startDate' ? dates : date}
         />
-        {/* {openCalendar && (
-          <RNDateTimePicker
-            value={new Date()}
-            display="default"
-            onChange={(event, date) => {
-              console.log(event);
-              console.log(date);
-            }}
-          />
-        )} */}
+
         <DateTimePickerModal
           isVisible={openClock}
           mode="time"
           onConfirm={handleConfirmClock}
           onCancel={() => setOpenClock(false)}
+          minimumDate={
+            value == 'startTime' ? new Date() : startDate == endDate && time
+          }
         />
-        {/* {openClock && (
-          <RNDateTimePicker
-            value={new Date()}
-            mode="time"
-            display="default"
-            onChange={(event, date) => {
-              console.log(event);
-              console.log(date);
-            }}
-          />
-        )} */}
       </View>
       <View
         style={{

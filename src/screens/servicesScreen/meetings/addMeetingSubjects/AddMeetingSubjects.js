@@ -4,7 +4,8 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  ScrollView
+  ScrollView,
+  FlatList
 } from 'react-native';
 import React, { useContext, useEffect, useState } from 'react';
 import * as Progress from 'react-native-progress';
@@ -44,7 +45,8 @@ const AddMeetingSubjects = () => {
     TimeZone,
     Repeat,
     platform,
-    location
+    location,
+    userRequired
   } = route?.params;
   console.log('meeting data from add meeting subjects', {
     attachFiles,
@@ -59,7 +61,8 @@ const AddMeetingSubjects = () => {
     TimeZone,
     Repeat,
     platform,
-    location
+    location,
+    userRequired
   });
 
   console.log('selected subjects from add meeting subjects', selectedSubjects);
@@ -68,6 +71,9 @@ const AddMeetingSubjects = () => {
   const [filterData, setFilterData] = useState(subjectData);
   const [subjectData, setSubjectData] = useState(selectedSubjects);
   const [subjectsId, setSubjectsId] = useState([]);
+  const [user, setUsers] = useState([]);
+  const [visibleIndex, setVisibleIndex] = useState(-1);
+  const [openIndex, setOpenIndex] = useState(-1);
 
   useEffect(() => {
     if (selectedSubjects.length > 0) {
@@ -148,7 +154,12 @@ const AddMeetingSubjects = () => {
       <Header
         name={'Add meeting'}
         rightIconName={IconName.Close}
-        onRightPress={() => navigation.goBack()}
+        onRightPress={() =>
+          navigation.navigate('Details', {
+            title: 'Meetings',
+            active: '0'
+          })
+        }
       />
 
       <View style={styles.subContainer}>
@@ -182,15 +193,25 @@ const AddMeetingSubjects = () => {
         <Divider style={styles.divider} />
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {selectedSubjects?.map((subject, index) => {
-            return (
-              <AddSubjectsCard
-                item={subject}
-                searchText={searchText}
-                index={index}
-              />
-            );
-          })}
+          <FlatList
+            data={selectedSubjects}
+            keyExtractor={(item, index) => {
+              return `${item.subjectId}`;
+            }}
+            renderItem={({ item, index }) => {
+              return (
+                <AddSubjectsCard
+                  item={item}
+                  searchText={searchText}
+                  index={index}
+                  visibleIndex={visibleIndex}
+                  setVisibleIndex={setVisibleIndex}
+                  openIndex={openIndex}
+                  setOpenIndex={setOpenIndex}
+                />
+              );
+            }}
+          />
           <View style={styles.deadlineContainer}>
             <Text style={styles.txtTitle}>DEADLINE SUGGESTING</Text>
             <TouchableOpacity
@@ -210,7 +231,9 @@ const AddMeetingSubjects = () => {
               title={'Select subjects'}
               layoutStyle={styles.selectsubjectBtnLayout}
               textStyle={styles.txtCancelButton}
-              onPress={() => navigation.navigate('SelectSubjects')}
+              onPress={() =>
+                navigation.navigate('SelectSubjects', { committee })
+              }
             />
           </View>
         </ScrollView>
@@ -268,7 +291,7 @@ const AddMeetingSubjects = () => {
                     platformId: platform.platformId,
                     repeat: 0,
                     repeatName: Repeat,
-                    required: [],
+                    required: userRequired,
                     setDate: startDate,
                     setTime: startTime,
                     subjectIds: subjectsId[0],

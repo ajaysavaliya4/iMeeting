@@ -37,7 +37,9 @@ const DetailsScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [meetingData, setMeetingData] = useState([]);
   const [filterMeetingData, setFilterMeetingData] = useState([]);
-  const { setEditModal, committee, editModal } = useContext(UserContext);
+  const { committee } = useContext(UserContext);
+  const [visibleIndex, setVisibleIndex] = useState(-1);
+  const [isFetching, setIsFetching] = useState(false);
   console.log('commitee', committee);
 
   // get ALL SUBJECTS
@@ -97,7 +99,7 @@ const DetailsScreen = () => {
       {/* header */}
       <TouchableOpacity
         style={{ flex: 1 }}
-        // onPress={setEditModal(false)}
+        onPress={() => setVisibleIndex(-1)}
         activeOpacity={1}
       >
         <View style={styles.headerContainer}>
@@ -125,7 +127,7 @@ const DetailsScreen = () => {
                 if (activeTab === '0') {
                   navigation.navigate('AddMeetingGeneral');
                 } else if (activeTab === '1') {
-                  navigation.navigate('AddSubject');
+                  navigation.navigate('AddSubject', { committee: null });
                 }
               }}
             >
@@ -303,7 +305,13 @@ const DetailsScreen = () => {
                   }
                   keyExtractor={(item, index) => `${item.meetingId}`}
                   renderItem={({ item, index }) => (
-                    <MeetingsCard item={item} index={index} text={searchText} />
+                    <MeetingsCard
+                      item={item}
+                      index={index}
+                      text={searchText}
+                      visibleIndex={visibleIndex}
+                      setVisibleIndex={setVisibleIndex}
+                    />
                   )}
                   showsVerticalScrollIndicator={false}
                 />
@@ -358,6 +366,8 @@ const DetailsScreen = () => {
                       index={index}
                       searchText={searchText}
                       search={search}
+                      visibleIndex={visibleIndex}
+                      setVisibleIndex={setVisibleIndex}
                     />
                   )}
                   showsVerticalScrollIndicator={false}

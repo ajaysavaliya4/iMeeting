@@ -1,5 +1,5 @@
-import { View, Text, TouchableOpacity } from 'react-native';
-import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import DropDownPicker from 'react-native-dropdown-picker';
 
 import { styles } from './styles';
@@ -13,24 +13,55 @@ import { useMutation, useQuery } from '@apollo/client';
 import { UPDATE_SUBJECT_STATUS } from '../../../../graphql/mutation';
 import { GET_ALL_SUBJECTS_STATUS } from '../../../../graphql/query';
 
-const AddSubjectsCard = ({ item, searchText, index }) => {
+const AddSubjectsCard = ({
+  item,
+  searchText,
+  index,
+  visibleIndex,
+  setVisibleIndex,
+  openIndex,
+  setOpenIndex
+}) => {
   console.log(item);
   const [editModal, setEditModal] = useState(false);
   const [valueStatus, setValueStatus] = useState('Created');
   const [openStatus, setOpenStatus] = useState(false);
   const [subjectStatus, setSubectStatus] = useState([]);
+  const [items, setItems] = useState([{ label: 'Design', value: 'design' }]);
 
   const getSubjectStatus = useQuery(GET_ALL_SUBJECTS_STATUS, {
     onCompleted: (data) => {
-      console.log('subject status', data.subjectStatus.item);
+      console.log('subject status', data.subjectStatus.items);
       if (data) {
-        setSubectStatus(data.subjectStatus.item);
+        setSubectStatus(data.subjectStatus.items);
       }
     },
     onError: (data) => {
       console.log('subject status error', data);
     }
   });
+
+  useEffect(() => {
+    subjectStatus?.map((status) => {
+      console.log('subjectStatusId', status.subjectStatusId);
+      console.log('subjectStatus', status.subjectStatus);
+      setItems([
+        {
+          label: status.subjectStatus,
+          value: status.subjectStatusId
+        }
+      ]);
+    });
+  }, [subjectStatus]);
+
+  // const getSubjectStatus = useQuery(GET_ALL_SUBJECTS_STATUS, {
+  //   onCompleted: (data) => {
+  //     console.log('subject status', data.subjectStatus.items);
+  //   },
+  //   onError: (data) => {
+  //     console.log('get subject status error', data);
+  //   }
+  // });
 
   const [updateSubjectStatus] = useMutation(UPDATE_SUBJECT_STATUS, {
     onCompleted: (data) => {
@@ -43,20 +74,18 @@ const AddSubjectsCard = ({ item, searchText, index }) => {
     <TouchableOpacity
       activeOpacity={1}
       key={index}
-      style={{ flex: 1, zIndex: 20 }}
+      style={[
+        Platform.OS === 'ios'
+          ? { zIndex: -2 * index }
+          : { elevation: -2 * index, zIndex: -2 * index }
+      ]}
       onPress={() => {
-        setEditModal(false);
+        setVisibleIndex(-1);
       }}
+      index={index}
     >
       {/* committee details */}
-      <View
-        style={styles.committeeDetailView}
-        onPress={() => {
-          // navigation.navigate("SubjectDetails");
-          setEditModal(false);
-        }}
-        activeOpacity={0.5}
-      >
+      <View style={styles.committeeDetailView} activeOpacity={0.5}>
         {getHighlightedText(item.subjectTitle, searchText)}
 
         {/* subject details */}
@@ -85,26 +114,37 @@ const AddSubjectsCard = ({ item, searchText, index }) => {
             flexDirection: 'row',
             alignItems: 'center',
             marginTop: SIZES[12],
-            width: '90%',
-            zIndex: 1
+            width: '90%'
           }}
         >
           <Text style={styles.txtSubjectsTitle}>Status</Text>
           <DropDownPicker
-            listMode="SCROLLVIEW"
-            open={openStatus}
+            listMode="MODAL"
+            open={openIndex == index}
+            dropDownDirection="TOP"
+            zIndex={2}
             value={valueStatus}
-            items={items}
+            listChildContainerStyle={{ height: 500 }}
+            items={subjectStatus.map((status) => {
+              return {
+                label: status.subjectStatus,
+                value: status.subjectStatusId
+              };
+            })}
             arrowIconStyle={{
               height: SIZES[12],
               width: SIZES[14]
             }}
             setOpen={() => {
-              setOpenStatus(!openStatus);
+              // setOpenStatus(!openStatus);
+              setOpenIndex(index);
+            }}
+            onClose={() => {
+              setOpenIndex(-1);
             }}
             setValue={setValueStatus}
             setItems={setItems}
-            placeholder={'Created'}
+            placeholder={item.subjectStatus}
             placeholderStyle={styles.txtDiscription}
             style={{
               borderWidth: 0,
@@ -151,27 +191,27 @@ const AddSubjectsCard = ({ item, searchText, index }) => {
 
       {/* dotsView */}
       <TouchableOpacity
-        onPress={() => setEditModal(!editModal)}
+        onPress={() => setVisibleIndex(!visibleIndex ? -1 : index)}
         style={styles.dotsView}
       >
         <Icon name={IconName.Dots} height={16} width={6} />
       </TouchableOpacity>
-      {editModal && (
+      {visibleIndex == index && (
         <View style={styles.modalView}>
           <EditDeleteModal
             onPressDownload={() => navigation.navigate('SubjectDownload')}
             subjectStatus={item.subjectStatus}
             onPressDelete={() => {
               onDeleteHandler(item.subjectId);
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressEdit={() => {
               navigation.navigate('EditSubject', { item });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressView={() => {
               navigation.navigate('SubjectDetails', { item });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
           />
         </View>

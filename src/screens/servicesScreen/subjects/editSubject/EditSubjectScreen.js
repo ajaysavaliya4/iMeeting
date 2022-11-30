@@ -31,7 +31,6 @@ import {
 import { UPDATE_SUBJECTS } from '../../../../graphql/mutation';
 import Loader from '../../../../component/Loader/Loader';
 import { SIZES } from '../../../../themes/Sizes';
-import { BASE_URL } from '../../../../ApolloClient/Client';
 
 const EditSubjectScreen = () => {
   const navigation = useNavigation();
@@ -53,7 +52,6 @@ const EditSubjectScreen = () => {
   const [committees, setCommittee] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [items, setItems] = useState([{ label: item, value: 'design' }]);
-  let fileId = [];
 
   item?.attachFileIds.map((id) => {
     const { loading, error } = useQuery(GET_FILE, {
@@ -61,18 +59,27 @@ const EditSubjectScreen = () => {
         fileEntryId: id
       },
       onCompleted: (data) => {
-        setFileResponse((prev) => {
-          console.log('prev', prev);
-          if (prev.fileEnteryId !== id) {
-            return [...prev, data.uploadedFile];
-          }
-        });
+        if (data) {
+          setFileResponse((prev) => {
+            const pevDaa = prev.filter((ite) => {
+              return ite.fileEnteryId !== data.fileEnteryId;
+            });
+            return [...pevDaa, data];
+          });
+        }
       }
     });
     if (error) {
       console.log('file error', error);
     }
   });
+
+  useEffect(() => {
+    const fileId = fileResponse.map((file) => file.fileEnteryId);
+
+    setFilesId(fileId);
+  }, [fileResponse]);
+  console.log('file id', filesId);
 
   const checkPermission = async (file) => {
     console.log('check permission');
@@ -186,6 +193,7 @@ const EditSubjectScreen = () => {
   const { loading: MeetingLoading, error: MeetingError } = useQuery(
     GET_All_MEETING,
     {
+      variables: { onlyMyMeeting: false, screen: 1 },
       onCompleted: (data) => {
         if (data) {
           console.log('meetings', data?.meetings.items);
@@ -195,7 +203,7 @@ const EditSubjectScreen = () => {
     }
   );
   if (MeetingError) {
-    console.log('commitee error', MeetingError);
+    console.log('MeetingError', MeetingError);
   }
 
   useEffect(() => {
@@ -215,14 +223,14 @@ const EditSubjectScreen = () => {
         presentationStyle: 'fullScreen',
         type: [DocumentPicker.types.allFiles]
       });
-
+      const url = await AsyncStorage.getItem('@url');
       response.map((res) => {
         if (res !== null) {
           const formData = new FormData();
           formData.append('file', res);
           console.log('formdata', formData);
 
-          fetch(`${BASE_URL}/o/imeeting-rest/v1.0/file-upload`, {
+          fetch(`https://${url}//o/imeeting-rest/v1.0/file-upload`, {
             method: 'POST',
             headers: {
               Authorization: 'Bearer ' + `${token}`,
@@ -233,27 +241,13 @@ const EditSubjectScreen = () => {
             .then((response) => response.json())
             .then((responseData) => {
               // setFileId(responseData?.fileEnteryId);
-              fileId.push(responseData?.fileEnteryId);
-              console.log('fileId', fileId);
-              setFilesId(fileId);
-
-              if (fileId) {
-                fileId.map((id) =>
-                  fetchFile({
-                    variables: {
-                      fileEntryId: id
-                    },
-                    onCompleted: (data) => {
-                      console.log(data, 'inner file dartas');
-                      setFileResponse((prev) => {
-                        console.log('prev', prev);
-                        if (prev.fileEnteryId !== id) {
-                          return [...prev, data.uploadedFile];
-                        }
-                      });
-                    }
-                  })
-                );
+              if (responseData) {
+                setFileResponse((prev) => {
+                  const pevDaa = prev.filter((ite) => {
+                    return ite.fileEnteryId !== responseData.fileEnteryId;
+                  });
+                  return [...pevDaa, responseData];
+                });
               }
             })
             .then(() => {})
@@ -276,20 +270,14 @@ const EditSubjectScreen = () => {
     console.log('addsubject error--', error);
   }
 
-  const removeFile = (id) => {
-    const filteredData = fileResponse?.filter(
-      (item) => item.fileEnteryId !== id
-    );
-    //Updating List Data State with NEW Data.
-    setFileResponse(filteredData);
-    setFilesId(
-      filteredData.map((data) => {
-        return data.fileEnteryId;
-      })
-    );
+  const removeFile = (file) => {
+    setFileResponse((prev) => {
+      const pevDaa = prev.filter((ite) => {
+        return ite.fileEnteryId !== file.fileEnteryId;
+      });
+      return [...pevDaa];
+    });
   };
-  console.log('remove', fileResponse);
-  console.log('files id after delete', filesId);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -358,9 +346,9 @@ const EditSubjectScreen = () => {
                   listMode="SCROLLVIEW"
                   open={openMeeting}
                   value={valueMeeting}
-                  items={committees?.map((item) => ({
-                    label: item.committeeTitle,
-                    value: item.organizationId
+                  items={meetings?.map((item) => ({
+                    label: item.meetingTitle,
+                    value: item.meetingId
                   }))}
                   setOpen={() => {
                     setOpenMeeting(!openMeeting);
@@ -369,7 +357,7 @@ const EditSubjectScreen = () => {
                   }}
                   setValue={setValueMeeting}
                   setItems={setItems}
-                  placeholder={'SELECT MEETING'}
+                  placeholder={''}
                   placeholderStyle={{
                     ...Fonts.PoppinsRegular[12],
                     color: Colors.secondary
@@ -450,7 +438,7 @@ const EditSubjectScreen = () => {
                       fileSize={file.size}
                       onDownloadPress={() => checkPermission(file.downloadUrl)}
                       fileType={file.type}
-                      onRemovePress={() => removeFile(file.fileEnteryId)}
+                      onRemovePress={() => removeFile(file)}
                       download={true}
                       deleted={true}
                       style={{

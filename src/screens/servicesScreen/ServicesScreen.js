@@ -61,6 +61,7 @@ const ServicesScreen = ({ navigation }) => {
             width={SIZES[18]}
             textStyle={{ marginTop: SIZES[24] }}
             title={'Tasks'}
+            onPress={() => navigation.navigate('TasksList')}
           />
         </View>
 

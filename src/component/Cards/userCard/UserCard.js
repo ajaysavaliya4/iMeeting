@@ -20,21 +20,45 @@ const UserCard = ({
   text,
   isSwitchOnRow,
   required,
-  setRequired
+  setRequired,
+  userSelect,
+  editable,
+  deleted,
+  userDetails
 }) => {
   const navigation = useNavigation();
   const [editModal, setEditModal] = useState(false);
   // const { required, setRequired } = useContext(UserContext);
   const [isSwitchOn, setIsSwitchOn] = useState(false);
+  const { selectedUsers } = useContext(UserContext);
 
   useEffect(() => {
-    let newData = [];
     if (isSwitchOn) {
-      newData = newData.push(isSwitchOn == '1' ? true : false);
-      setRequired(newData);
+      setRequired((prev) => {
+        const pevDaa = prev.filter((ite) => {
+          return ite.user !== item.userId;
+        });
+        return [
+          ...pevDaa,
+          {
+            user: item.userId,
+            isRequired: isSwitchOn
+          }
+        ];
+      });
     } else {
-      newData = newData.pop(true);
-      setRequired(newData);
+      setRequired((prev) => {
+        const pevDaa = prev.filter((ite) => {
+          return ite.user !== item.userId;
+        });
+        return [
+          ...pevDaa,
+          {
+            user: item.userId,
+            isRequired: isSwitchOn
+          }
+        ];
+      });
     }
   }, [isSwitchOn]);
 
@@ -64,41 +88,21 @@ const UserCard = ({
   //   setRequired(newRequired);
   // }, [isSwitchOn]);
 
-  // const getHighlightedText = (txt) => {
-  //   const parts = txt.split(new RegExp(`(${text})`, 'gi'));
-  //   return (
-  //     <Text style={{ marginLeft: 12 }}>
-  //       {parts.map((part) =>
-  //         part === text ? (
-  //           <Text
-  //             style={[
-  //               styles.txtCommitteeTitle,
-  //               {
-  //                 backgroundColor: '#E6C54F'
-  //               }
-  //             ]}
-  //             numberOfLines={1}
-  //           >
-  //             {part}
-  //           </Text>
-  //         ) : (
-  //           <Text style={styles.txtCommitteeTitle} numberOfLines={1}>
-  //             {part}
-  //           </Text>
-  //         )
-  //       )}
-  //     </Text>
-  //   );
-  // };
-
-  const RowData = ({ name, discription, style, styleText, switchView }) => {
+  const RowData = ({
+    name,
+    discription,
+    style,
+    styleText,
+    switchView,
+    value
+  }) => {
     return (
       <View style={styles.container}>
         <Text style={styles.txtCommitteeName}>{name}</Text>
         {switchView && (
           <Switch
             color={Colors.switch}
-            value={isSwitchOn}
+            value={value}
             onValueChange={() => setIsSwitchOn(!isSwitchOn)}
           />
         )}
@@ -124,20 +128,44 @@ const UserCard = ({
           {/* <Text
             style={styles.txtCommitteeTitle}
           >{`${item.firstName} ${item.secondName}`}</Text> */}
-          <Text style={{ marginLeft: SIZES[12] }}>
-            {getHighlightedText(`${item.firstName} ${item.secondName}`, text)}
+          <Text
+            style={{
+              marginLeft: SIZES[12],
+
+              width: '80%'
+            }}
+            numberOfLines={1}
+          >
+            {getHighlightedText(
+              item.firstName
+                ? item.firstName + ' ' + item.secondName
+                : `${item.userName}`,
+              text
+            )}
           </Text>
         </View>
 
-        <RowData name={'E-mail'} discription={item.emails} />
-        <RowData name={'Role'} discription={item.roles} />
+        <RowData
+          name={'E-mail'}
+          discription={item.emails ? item.emails : item.email}
+        />
+        <RowData
+          name={'Role'}
+          discription={
+            item.roles
+              ? item.roles.join(', ')
+              : item.yourRoleName
+              ? item.yourRoleName
+              : item.roleName
+          }
+        />
         <RowData
           name={'Available'}
-          discription={item?.userDetails?.isAvailable || 'Unknown'}
+          discription={item?.isAvailable || 'Unknown'}
           style={{
             height: SIZES[8],
             width: SIZES[8],
-            backgroundColor: item?.userDetails?.isAvailable
+            backgroundColor: item?.isAvailable
               ? '#81AB96'
               : 'Unknown'
               ? '#E6C54F'
@@ -153,21 +181,29 @@ const UserCard = ({
         />
         <RowData
           name={'Required'}
-          discription={item.required}
+          discription={item.isRequired}
           switchView={isSwitchOnRow}
+          value={item.isRequired || isSwitchOn}
         />
       </View>
 
       {/* dotsView */}
-      <TouchableOpacity
-        onPress={() => setEditModal(!editModal)}
-        style={styles.dotsView}
-      >
-        <Icon name={IconName.Dots} height={SIZES[16]} width={SIZES[4]} />
-      </TouchableOpacity>
+      {userSelect && (
+        <TouchableOpacity
+          onPress={() => setEditModal(!editModal)}
+          style={styles.dotsView}
+        >
+          <Icon name={IconName.Dots} height={SIZES[16]} width={SIZES[4]} />
+        </TouchableOpacity>
+      )}
       {editModal && (
         <View style={styles.modalView}>
-          <EditDeleteModal onPressDelete={onDeleteHandler} />
+          <EditDeleteModal
+            onPressDelete={onDeleteHandler}
+            subjectStatus={'NoDeleted'}
+            deleted={deleted}
+            editable={editable}
+          />
         </View>
       )}
     </TouchableOpacity>

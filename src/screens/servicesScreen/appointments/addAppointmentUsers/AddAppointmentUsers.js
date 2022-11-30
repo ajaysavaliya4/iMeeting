@@ -11,6 +11,7 @@ import * as Progress from 'react-native-progress';
 import DeviceInfo from 'react-native-device-info';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Divider } from 'react-native-paper';
+import Voice from '@react-native-community/voice';
 
 import { SIZES } from '../../../../themes/Sizes';
 import { Colors } from '../../../../themes/Colors';
@@ -27,8 +28,59 @@ const AddAppointmentUsers = () => {
   const [searchText, setSearchText] = useState('');
   const [users, setUsers] = useState([]);
   const [required, setRequired] = useState([]);
+  const [pitch, setPitch] = useState('');
+  const [error, setError] = useState('');
+  const [end, setEnd] = useState('');
+  const [started, setStarted] = useState('');
+  const [results, setResults] = useState([]);
+  const [partialResults, setPartialResults] = useState([]);
   const { attachFiles, committee, title, discription } = route?.params;
   const { selectedUsers } = useContext(UserContext);
+
+  const onSpeechStart = (e) => {
+    setStarted('True');
+  };
+  const onSpeechEnd = () => {
+    setStarted(null);
+    setEnd('True');
+  };
+  const onSpeechError = (e) => {
+    setError(JSON.stringify(e.error));
+  };
+  const onSpeechResults = (e) => {
+    setResults(e.value);
+  };
+  const onSpeechPartialResults = (e) => {
+    setPartialResults(e.value);
+  };
+  const onSpeechVolumeChanged = (e) => {
+    setPitch(e.value);
+  };
+
+  useEffect(() => {
+    Voice.onSpeechStart = onSpeechStart;
+    Voice.onSpeechEnd = onSpeechEnd;
+    Voice.onSpeechError = onSpeechError;
+    Voice.onSpeechResults = onSpeechResults;
+    Voice.onSpeechPartialResults = onSpeechPartialResults;
+    Voice.onSpeechVolumeChanged = onSpeechVolumeChanged;
+  }, []);
+
+  const startSpeechRecognizing = async () => {
+    setPitch('');
+    setError('');
+    setStarted('');
+    setResults([]);
+    setPartialResults([]);
+    setEnd('');
+    try {
+      await Voice.start('en-US', {
+        EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 10000
+      });
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (selectedUsers?.length > 0) {
@@ -66,7 +118,13 @@ const AddAppointmentUsers = () => {
             placeholder={'Search'}
             onChangeText={(text) => setSearchText(text)}
           />
-          <Icon name={IconName.Speaker} height={SIZES[15]} width={SIZES[10]} />
+          {/* <TouchableOpacity onPress={startSpeechRecognizing}>
+            <Icon
+              name={IconName.Speaker}
+              height={SIZES[15]}
+              width={SIZES[10]}
+            />
+          </TouchableOpacity> */}
         </View>
         <TouchableOpacity
           style={styles.committeeView}
@@ -113,6 +171,7 @@ const AddAppointmentUsers = () => {
               required={required}
               setRequired={setRequired}
               isSwitchOnRow={true}
+              userSelect={false}
             />
           )}
           showsVerticalScrollIndicator={false}

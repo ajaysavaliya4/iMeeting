@@ -18,6 +18,7 @@ import AppoinmentCard from '../../../../component/Cards/appointmentCard/Appointm
 import { GET_All_APPOINTMENT } from '../../../../graphql/query';
 import { Fonts } from '../../../../themes';
 import { Colors } from '../../../../themes/Colors';
+import Loader from '../../../../component/Loader/Loader';
 
 const AppointmentsList = () => {
   const navigation = useNavigation();
@@ -25,6 +26,7 @@ const AppointmentsList = () => {
   const [searchText, setSearchText] = useState('');
   const [appointmentsData, setAppointmentsData] = useState([]);
   const [filterAppointmentsData, setFilterAppointmentsData] = useState([]);
+  const [visibleIndex, setVisibleIndex] = useState(-1);
   // get ALL appointment
   const Appointment = useQuery(GET_All_APPOINTMENT, {
     variables: {
@@ -127,7 +129,13 @@ const AppointmentsList = () => {
             keyExtractor={(item) => `${item.id}`}
             renderItem={({ item, index }) => {
               return (
-                <AppoinmentCard item={item} index={index} text={searchText} />
+                <AppoinmentCard
+                  item={item}
+                  index={index}
+                  text={searchText}
+                  visibleIndex={visibleIndex}
+                  setVisibleIndex={setVisibleIndex}
+                />
               );
             }}
             showsVerticalScrollIndicator={false}
@@ -138,6 +146,8 @@ const AppointmentsList = () => {
               {Appointment.error.message}
             </Text>
           </View>
+        ) : Appointment.loading ? (
+          <Loader />
         ) : (
           <View style={{ alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ ...Fonts.PoppinsBold[20], color: Colors.primary }}>

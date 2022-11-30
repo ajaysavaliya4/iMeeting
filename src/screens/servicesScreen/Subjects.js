@@ -11,13 +11,16 @@ import React, { useState } from 'react';
 import Header from '../../component/header/Header';
 import { Icon, IconName } from '../../component';
 import { Divider } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { SIZES } from '../../themes/Sizes';
 import { Colors } from '../../themes/Colors';
 import { Fonts } from '../../themes';
-import { usersData } from '../../Constans/data';
+import { subjectData, usersData } from '../../Constans/data';
 import SubjectCard from '../../component/Cards/subjectCard/SubjectCard';
 import { Button } from '../../component/button/Button';
+import { useRef } from 'react/cjs/react.development';
+import { useQuery } from '@apollo/client';
+import { GET_SUBJECT_BY_ID } from '../../graphql/query';
 
 const subjectsData = [
   {
@@ -60,8 +63,39 @@ const subjectsData = [
 
 const Subjects = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { subjectId, role } = route?.params;
+  console.log('subject id', subjectId);
   const [searchText, setSearchText] = useState('');
-  const [role, setRole] = useState('Member');
+  const [subject, setSubject] = useState(null);
+  let subjects = [];
+
+  subjectId?.map((id) => {
+    const getSubjectsById = useQuery(GET_SUBJECT_BY_ID, {
+      variables: {
+        subjectId: id
+      },
+      onCompleted: (data) => {
+        console.log('subject from meeting details', data.subject);
+        setSubject((prev) => {
+          const id = subjects.map((item) => {
+            return item.subjectId;
+          });
+
+          if (id != data.subject.subjectId) {
+            subjects.push(data.subject);
+            setSubject(subjects);
+          }
+        });
+      }
+    });
+    // if (getSubjectsById.data) {
+    //   console.log('getSubjectsById', getSubjectsById.data);
+    // }
+    if (getSubjectsById.error) {
+      console.log('getSubjectsById error', getSubjectsById.error);
+    }
+  });
   return (
     <SafeAreaView style={styles.container}>
       <Header
@@ -124,7 +158,7 @@ const Subjects = () => {
         )}
         <Divider style={styles.divider} />
         <FlatList
-          data={subjectsData}
+          data={subject}
           keyExtractor={(item, index) => `subjects-${item.id}`}
           renderItem={({ item, index }) => (
             <SubjectCard

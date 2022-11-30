@@ -12,6 +12,7 @@ import com.facebook.soloader.SoLoader;
 import com.imeeting.newarchitecture.MainApplicationReactNativeHost;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import com.wenkesj.voice.VoicePackage;
 
 
 

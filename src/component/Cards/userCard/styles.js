@@ -24,9 +24,7 @@ export const styles = StyleSheet.create({
     color: Colors.bold
   },
   committeeDetailView: {
-    paddingVertical: SIZES[24],
-
-    width: '90%'
+    paddingVertical: SIZES[24]
   },
   txtCommitteeTitle: {
     ...Fonts.PoppinsBold[20],

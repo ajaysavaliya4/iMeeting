@@ -16,16 +16,28 @@ import { styles } from './styles';
 import { ModalContext } from '../../../context';
 import { getHighlightedText } from '../../highlitedText/HighlitedText';
 
-const SubjectsCard = ({ item, index, searchText, search }) => {
+const SubjectsCard = ({
+  item,
+  index,
+  searchText,
+  visibleIndex,
+  setVisibleIndex
+}) => {
   console.log('index', index);
   const navigation = useNavigation();
-  const [editModal, setEditModal] = useState(false);
 
   const [deleteSubject, { data, loading, error }] = useMutation(
     DELETE_SUBJECTS,
     {
       // export const GET_All_SUBJECTS = gql`
-      refetchQueries: [{ query: GET_All_SUBJECTS }]
+      refetchQueries: [
+        {
+          query: GET_All_SUBJECTS,
+          variables: {
+            screen: 0
+          }
+        }
+      ]
     }
   );
   if (data) {
@@ -92,7 +104,7 @@ const SubjectsCard = ({ item, index, searchText, search }) => {
   };
 
   return (
-    <TouchableOpacity activeOpacity={1} onPress={() => setEditModal(false)}>
+    <TouchableOpacity activeOpacity={1} onPress={() => setVisibleIndex(-1)}>
       {index !== 0 && <Divider style={styles.divider} />}
 
       {/* committee details */}
@@ -147,34 +159,34 @@ const SubjectsCard = ({ item, index, searchText, search }) => {
 
       {/* dotsView */}
       <TouchableOpacity
-        onPress={() => setEditModal(!editModal)}
+        onPress={() => setVisibleIndex(!visibleIndex ? -1 : index)}
         style={styles.dotsView}
       >
         <Icon name={IconName.Dots} height={16} width={6} />
       </TouchableOpacity>
-      {editModal && (
+      {visibleIndex == index && (
         <View style={styles.modalView}>
           <EditDeleteModal
             onPressDownload={() => {
               navigation.navigate('SubjectDownload', { item });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             subjectStatus={item.subjectStatus}
             onPressDelete={() => {
               onDeleteHandler(item.subjectId);
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressEdit={() => {
               navigation.navigate('EditSubject', { item });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressView={() => {
               navigation.navigate('SubjectDetails', { item });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             download={true}
             editable={item.subjectStatus === 'Deleted' ? false : true}
-            deleted={item.subjectStatus === 'Deleted' ? true : false}
+            deleted={true}
           />
         </View>
       )}

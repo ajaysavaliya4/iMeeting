@@ -51,12 +51,12 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   timezoneContainer: {
-    zIndex: 20,
+    zIndex: 10,
     marginTop: SIZES[40]
   },
   repeatContainer: {
     marginTop: SIZES[24],
-    zIndex: 10
+    zIndex: 20
   },
   buttonContainer: {
     paddingHorizontal: SIZES[16],

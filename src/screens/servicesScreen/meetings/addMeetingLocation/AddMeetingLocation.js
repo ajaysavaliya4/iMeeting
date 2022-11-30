@@ -30,7 +30,8 @@ const AddMeetingLocation = () => {
     startTime,
     endTime,
     TimeZone,
-    Repeat
+    Repeat,
+    userRequired
   } = route?.params;
   console.log('meeting data from addmeetinglocation', {
     attachFiles,
@@ -43,7 +44,8 @@ const AddMeetingLocation = () => {
     startTime,
     endTime,
     TimeZone,
-    Repeat
+    Repeat,
+    userRequired
   });
   const [openLocation, setOpenLocation] = useState(false);
   const [valueLocation, setValueLocation] = useState(null);
@@ -51,6 +53,7 @@ const AddMeetingLocation = () => {
   const [valueVideoConference, setValueVideoConference] = useState(null);
   const [platform, setPlatform] = useState(null);
   const [location, setLocation] = useState([]);
+  const [error, setError] = useState(null);
   const [items, setItems] = useState([
     { label: 'Google meet', value: 1 },
     { label: 'Team meet', value: 2 }
@@ -87,16 +90,23 @@ const AddMeetingLocation = () => {
     },
 
     onCompleted: (data) => {
-      console.log('get platform link', data.videoConferencePlateformLink);
+      console.log('get platform link', data.videoConferencePlatformLink);
       // setSubjectData(data?.subjects.items);
       if (data) {
-        setPlatform(data?.videoConferencePlateformLink);
+        setPlatform(data?.videoConferencePlatformLink);
       }
     }
   });
   if (platformError) {
     console.log('platformError', platformError);
   }
+
+  const handleViewDetails = () => {
+    navigation.navigate('LocationDetails', {
+      locationId: valueLocation,
+      platform: platform
+    });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -118,6 +128,11 @@ const AddMeetingLocation = () => {
         </View>
 
         <Text style={styles.txtAddSubjectTitle}>Location</Text>
+        {error && (
+          <Text style={{ alignSelf: 'center', color: Colors.Rejected }}>
+            {error}
+          </Text>
+        )}
         <View style={styles.locationContainer}>
           <Text style={styles.txtTitle}>LOCATION</Text>
           <DropDownPicker
@@ -135,7 +150,10 @@ const AddMeetingLocation = () => {
             setOpen={() => {
               setOpenLocation(!openLocation);
             }}
-            setValue={setValueLocation}
+            setValue={(value) => {
+              setValueLocation(value);
+              setError(null);
+            }}
             setItems={setItems}
             placeholder={''}
             placeholderStyle={{
@@ -154,13 +172,13 @@ const AddMeetingLocation = () => {
 
         <View style={styles.buttonContainer}>
           <Button
+            // disable={valueLocation == null}
             title={'View details'}
-            onPress={() =>
-              navigation.navigate('LocationDetails', {
-                locationId: valueLocation,
-                platform: platform
-              })
-            }
+            onPress={() => {
+              valueLocation == null
+                ? setError('Please select location')
+                : handleViewDetails();
+            }}
             layoutStyle={styles.cancelBtnLayout}
             textStyle={styles.txtCancelButton}
           />
@@ -251,6 +269,7 @@ const AddMeetingLocation = () => {
                 endTime,
                 TimeZone,
                 Repeat,
+                userRequired,
                 platform: platform,
                 location: valueLocation
               })

@@ -60,19 +60,19 @@ export const styles = StyleSheet.create({
     marginTop: SIZES[24],
     borderBottomWidth: SIZES[1],
     borderBottomColor: Colors.line,
-    zIndex: 20
+    zIndex: 10
   },
   committeeContainer: {
     marginTop: SIZES[16],
     borderBottomWidth: SIZES[1],
     borderBottomColor: Colors.line,
-    zIndex: 10
+    zIndex: 40
   },
   meetingContainer: {
     marginTop: SIZES[24],
     borderBottomWidth: SIZES[1],
     borderBottomColor: Colors.line,
-    zIndex: 5,
+    zIndex: 20,
     marginBottom: SIZES[24]
   },
   txtAttachFile: {

@@ -56,7 +56,7 @@ export const styles = StyleSheet.create({
   },
   repeatContainer: {
     marginTop: SIZES[24],
-    zIndex: 10
+    zIndex: 40
   },
   buttonContainer: {
     paddingHorizontal: SIZES[16],

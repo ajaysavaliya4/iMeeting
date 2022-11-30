@@ -21,8 +21,8 @@ const DashboardCard = ({
       activeOpacity={0.5}
       style={[
         {
-          height: SIZES[102],
-          width: SIZES[102],
+          height: SIZES[98],
+          width: SIZES[98],
           backgroundColor,
           borderRadius: SIZES[12],
           alignItems: 'center',

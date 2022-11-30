@@ -1,62 +1,58 @@
 import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { NavigationContainer } from '@react-navigation/native';
-import { ApolloProvider } from '@apollo/client';
-import { client } from './src/ApolloClient/Client';
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import MainStack from './routes';
-import { AppProvider } from './src/context';
+import { AppProvider, UserContext } from './src/context';
+import { Client, client } from './src/graphql/Client';
+import { setContext } from 'apollo-link-context';
+import { createUploadLink } from 'apollo-upload-client';
+import { ApolloLink } from 'apollo-link';
 
 const App = () => {
   const [token, setToken] = useState(null);
-
-  const getToken = async () => {
-    const token = await AsyncStorage.getItem('@token')
-      .then((result) => {
-        setToken(result);
-      })
-      .catch((e) => console.log(e));
-
-    // setToken(JSON.parse(user)?.dataToken);
-  };
+  const [url, setUrl] = useState('');
+  // const { companyUrl, setCompanyUrl } = useContext(UserContext);
 
   useEffect(() => {
+    const getToken = () => {
+      AsyncStorage.getItem('@token')
+        .then((result) => {
+          if (result) {
+            setToken('MainBottomTab');
+          } else {
+            setToken('Login');
+          }
+        })
+        .catch((e) => console.log(e));
+
+      // setToken(JSON.parse(user)?.dataToken);
+    };
     getToken();
-    console.log('token from app', token);
   }, []);
-
-  // const getToken = async () => {
-  //   try {
-  //     await AsyncStorage.getItem('@user')
-  //       .then((result) => {
-  //         if (result !== null) {
-  //           setToken(JSON.parse(result)?.dataToken);
-  //           console.log('token', token.toString());
-  //         } else setToken(null);
-  //       })
-  //       .catch((e) => console.log(e));
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-
   // useEffect(() => {
-  //   getToken();
-  // });
+  //   const getUrl = () => {
+  //     AsyncStorage.getItem('@url').then((data) => {
+  //       console.log('url', data);
+  //       setUrl(data);
+  //       setCompanyUrl(data);
+  //     });
+  //   };
+
+  //   getUrl();
+  // }, []);
+
+  // console.log('url from app', url);
 
   return (
     <AppProvider>
-      <ApolloProvider client={client}>
+      <ApolloProvider client={Client()}>
         <PaperProvider>
           <NavigationContainer>
-            {token ? (
-              <MainStack initialRouteName="MainBottomTab" />
-            ) : (
-              // <StackAuth />
-              <MainStack initialRouteName="MainBottomTab" />
-            )}
+            {token && <MainStack initialRouteName={token} />}
           </NavigationContainer>
         </PaperProvider>
       </ApolloProvider>

@@ -3,7 +3,8 @@ import {
   Text,
   SafeAreaView,
   TextInput,
-  TouchableOpacity
+  TouchableOpacity,
+  ScrollView
 } from 'react-native';
 import React, { useState } from 'react';
 import * as Progress from 'react-native-progress';
@@ -28,13 +29,15 @@ import { GET_TIMEZONE } from '../../../../graphql/query';
 const AddMeetingDateAndTime = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { attachFiles, committee, title, discription, users } = route?.params;
+  const { attachFiles, committee, title, discription, users, userRequired } =
+    route?.params;
   console.log('meeting data from date and time', {
     attachFiles,
     committee,
     title,
     discription,
-    users
+    users,
+    userRequired
   });
   const [startDate, setStartdate] = useState(
     moment(new Date()).format('DD MMM,YYYY')
@@ -42,14 +45,16 @@ const AddMeetingDateAndTime = () => {
   const [startNewDate, setStartNewDate] = useState(
     moment(new Date()).format('YYYY-MM-DD')
   );
-  const [startTime, setStartTime] = useState('08:00 PM');
-  const [endDate, setEnddate] = useState(
-    moment(new Date()).format('DD MMM,YYYY')
-  );
+  const [startTime, setStartTime] = useState(moment(new Date()).format('LT'));
+  const [endDate, setEnddate] = useState(startDate);
   const [endNewDate, setEndNewdate] = useState(
     moment(new Date()).format('YYYY-MM-DD')
   );
-  const [endTime, setEndTime] = useState('08:00 PM');
+  const [endTime, setEndTime] = useState(moment(new Date()).format('LT'));
+  const [date, setDate] = useState(new Date());
+  const [dates, setDates] = useState(new Date());
+  const [time, setTime] = useState(new Date());
+  const [times, setTimes] = useState(new Date());
   const [timeZone, setTimeZone] = useState([]);
   const [openCalendar, setOpenCalendar] = useState(false);
   const [openClock, setOpenClock] = useState(false);
@@ -63,32 +68,38 @@ const AddMeetingDateAndTime = () => {
   ]);
 
   const handleConfirmClock = (date) => {
-    console.log('A date has been picked: ', date);
+    console.log('A time has been picked: ', date);
 
     const time = moment(date).format('LT');
     console.log('time', time);
     if (value == 'startTime') {
       setStartTime(time);
+      setTime(date);
+      setEndTime(time);
+      setTimes(date);
     }
     if (value == 'endTime') {
       setEndTime(time);
+      setTime(date);
     }
     setOpenClock(false);
   };
   const handleConfirmCalendar = (date) => {
-    console.log('A date has been picked: ', date);
     setOpenCalendar(false);
     const Date = moment(date).format('DD MMM,YYYY');
     const newDate = moment(date).format('YYYY-MM-DD');
-    console.log('new date', newDate);
-    console.log('time', Date);
+
     if (value == 'startDate') {
       setStartdate(Date);
       setStartNewDate(newDate);
+      setDates(date);
+      setEnddate(Date);
+      setDate(date);
     }
     if (value == 'endDate') {
       setEnddate(Date);
       setEndNewdate(newDate);
+      setDate(date);
     }
   };
 
@@ -109,9 +120,14 @@ const AddMeetingDateAndTime = () => {
       <Header
         name={'Add meeting'}
         rightIconName={IconName.Close}
-        onRightPress={() => navigation.goBack()}
+        onRightPress={() =>
+          navigation.navigate('Details', {
+            title: 'Meetings',
+            active: '0'
+          })
+        }
       />
-      <View style={styles.subContainer}>
+      <ScrollView style={styles.subContainer}>
         <View style={styles.progressContainer}>
           <Progress.Bar
             color={Colors.switch}
@@ -218,6 +234,7 @@ const AddMeetingDateAndTime = () => {
             <Text style={styles.txtTitle}>TIMEZONE</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
+              dropDownDirection="TOP"
               open={openTimeZone}
               value={valueTimeZone}
               items={timeZone?.map((item) => ({
@@ -242,7 +259,8 @@ const AddMeetingDateAndTime = () => {
               style={{
                 borderWidth: 0,
                 paddingRight: SIZES[16],
-                paddingLeft: 0
+                paddingLeft: 0,
+                flex: 1
               }}
               textStyle={{ ...Fonts.PoppinsRegular[14] }}
             />
@@ -252,6 +270,7 @@ const AddMeetingDateAndTime = () => {
             <Text style={styles.txtTitle}>REPEAT</Text>
             <DropDownPicker
               listMode="SCROLLVIEW"
+              dropDownDirection="TOP"
               open={openRepeat}
               value={valueRepeat}
               items={[
@@ -306,6 +325,9 @@ const AddMeetingDateAndTime = () => {
           mode="date"
           onConfirm={handleConfirmCalendar}
           onCancel={() => setOpenCalendar(false)}
+          minimumDate={value === 'startDate' ? new Date() : dates}
+          date={value === 'startDate' ? dates : date}
+          timePickerModeAndroid="spinner"
         />
 
         <DateTimePickerModal
@@ -313,8 +335,11 @@ const AddMeetingDateAndTime = () => {
           mode="time"
           onConfirm={handleConfirmClock}
           onCancel={() => setOpenClock(false)}
+          minimumDate={value == 'startTime' ? new Date() : times}
+          date={value == 'startTime' ? times : time}
+          is24Hour={true}
         />
-      </View>
+      </ScrollView>
       <View
         style={{
           backgroundColor: Colors.white,
@@ -339,6 +364,7 @@ const AddMeetingDateAndTime = () => {
                 title,
                 discription,
                 users,
+                userRequired,
                 startDate: startNewDate,
                 endDate: endNewDate,
                 startTime: startTime,

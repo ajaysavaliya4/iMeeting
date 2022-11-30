@@ -19,9 +19,14 @@ import { styles } from './styles';
 import { getHighlightedText } from '../../highlitedText/HighlitedText';
 import moment from 'moment';
 
-const AppoinmentCard = ({ item, index, text, search }) => {
+const AppoinmentCard = ({
+  item,
+  index,
+  text,
+  visibleIndex,
+  setVisibleIndex
+}) => {
   const navigation = useNavigation();
-  const [editModal, setEditModal] = useState(false);
   const [data, setData] = useState('');
 
   const LocationById = useQuery(GET_APPOINTMENT_BY_ID, {
@@ -40,7 +45,8 @@ const AppoinmentCard = ({ item, index, text, search }) => {
     // export const GET_All_SUBJECTS = gql`
     refetchQueries: [
       {
-        query: GET_All_APPOINTMENT
+        query: GET_All_APPOINTMENT,
+        variables: { searchValue: '' }
       }
     ],
     onCompleted: (data) => {
@@ -103,7 +109,7 @@ const AppoinmentCard = ({ item, index, text, search }) => {
   return (
     <TouchableOpacity
       activeOpacity={1}
-      onPress={() => setEditModal(false)}
+      onPress={() => setVisibleIndex(-1)}
       key={index}
     >
       {index !== 0 && <Divider style={styles.divider} />}
@@ -133,37 +139,33 @@ const AppoinmentCard = ({ item, index, text, search }) => {
 
       {/* dotsView */}
       <TouchableOpacity
-        onPress={() => setEditModal(!editModal)}
+        onPress={() => setVisibleIndex(!visibleIndex ? -1 : index)}
         style={styles.dotsView}
       >
         <Icon name={IconName.Dots} height={16} width={6} />
       </TouchableOpacity>
-      {editModal && (
+      {visibleIndex == index && (
         <View style={styles.modalView}>
           <EditDeleteModal
             onPressDownload={() => navigation.navigate('SubjectDownload')}
-            subjectStatus={item.subjectStatus}
+            subjectStatus={item.isDisable && 'Deleted'}
             onPressDelete={() => {
               onDeleteHandler(item.appointmentId);
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressEdit={() => {
               navigation.navigate('EditAppointmentGeneral', { data });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             onPressView={() => {
               navigation.navigate('AppointmentDetails', { item });
-              setEditModal(false);
+              setVisibleIndex(-1);
             }}
             editable={
-              item.yourRoleName == 'Head' || item.yourRoleName == 'Secretory'
-                ? true
-                : false
+              item.yourRoleName == 'Member' && item.isDisable ? false : true
             }
             deleted={
-              item.yourRoleName == 'Head' || item.yourRoleName == 'Secretory'
-                ? true
-                : false
+              item.yourRoleName == 'Member' && item.isDisable ? false : true
             }
           />
         </View>

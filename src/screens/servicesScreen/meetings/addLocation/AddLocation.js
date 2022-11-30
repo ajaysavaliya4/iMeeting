@@ -7,16 +7,17 @@ import {
   ScrollView
 } from 'react-native';
 import React, { useState } from 'react';
+import { Divider } from 'react-native-paper';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import Clipboard from '@react-native-clipboard/clipboard';
+import { useMutation } from '@apollo/client';
+
 import Header from '../../../../component/header/Header';
 import { Icon, IconName } from '../../../../component';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { Divider } from 'react-native-paper';
 import { SIZES } from '../../../../themes/Sizes';
-import Clipboard from '@react-native-clipboard/clipboard';
 import { Button } from '../../../../component/button/Button';
 import { styles } from './styles';
 import { Colors } from '../../../../themes/Colors';
-import { useMutation } from '@apollo/client';
 import { UPDATE_LOCATION } from '../../../../graphql/mutation';
 import { GET_ALL_LOCATION } from '../../../../graphql/query';
 
@@ -82,6 +83,7 @@ const AddLocation = () => {
           <TextInput
             style={styles.textInput}
             onChangeText={(text) => setCapacity(text)}
+            keyboardType="numeric"
           />
           <Divider style={styles.divider} />
         </View>
@@ -109,6 +111,7 @@ const AddLocation = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(text) => setBuilding(text)}
+                keyboardType="numeric"
               />
               <Divider style={styles.divider} />
             </View>
@@ -117,6 +120,7 @@ const AddLocation = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(text) => setFloor(text)}
+                keyboardType="numeric"
               />
               <Divider style={styles.divider} />
             </View>
@@ -125,6 +129,7 @@ const AddLocation = () => {
               <TextInput
                 style={styles.textInput}
                 onChangeText={(text) => setRoom(text)}
+                keyboardType="numeric"
               />
               <Divider style={styles.divider} />
             </View>

@@ -101,7 +101,8 @@ export const styles = StyleSheet.create({
   txtSubjectsTitle: {
     ...Fonts.PoppinsRegular[14],
     color: Colors.secondary,
-    width: '30%'
+    width: '30%',
+    zIndex: 40
   },
   txtDiscription: {
     ...Fonts.PoppinsRegular[14],

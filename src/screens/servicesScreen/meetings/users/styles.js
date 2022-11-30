@@ -19,14 +19,17 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.gray,
     borderRadius: SIZES[10],
     marginVertical: SIZES[22],
-    height: SIZES[36]
+    justifyContent: 'center'
+    // height: SIZES[36]
   },
   textInput: {
     ...Fonts.PoppinsRegular[14],
     color: Colors.bold,
     backgroundColor: 'transparent',
     flex: 1,
-    marginHorizontal: SIZES[6]
+    marginHorizontal: SIZES[6],
+    // height: SIZES[36],
+    paddingVertical: 8
   },
   divider: {
     width: '100%',

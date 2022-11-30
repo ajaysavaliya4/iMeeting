@@ -7,7 +7,7 @@ import {
   FlatList,
   useWindowDimensions
 } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DeviceInfo from 'react-native-device-info';
 import CalendarStrip from 'react-native-calendar-strip';
@@ -22,34 +22,50 @@ import { Icon, IconName } from '../../../../component';
 import { styles } from './styles';
 import Avatar from '../../../../component/Avatar/Avatar';
 import { Fonts } from '../../../../themes';
+import { useQuery } from '@apollo/client';
+import { GET_TIMELINE_REVIEW } from '../../../../graphql/query';
+import Loader from '../../../../component/Loader/Loader';
+import EventCalendar from 'react-native-events-calendar';
 
 const TimelineScreen = () => {
   const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
   const route = useRoute();
   const { selectedUsers } = route?.params;
-  console.log(' from timeline', selectedUsers);
-  const [date, setDate] = useState(new Date().toISOString());
-  const [selected, setSelected] = useState(false);
-  const [from] = useState(moment().subtract(3, 'days').toDate());
-  const [till] = useState(moment().add(3, 'days').toISOString());
-  // moment().add(3, 'days').toISOString()
-  const [myEvents, setEvents] = useState([]);
+  // console.log(' from timeline', selectedUsers);
+  const userId = selectedUsers.map((user) => user.userId.toString()).join(',');
+  console.log('userId', userId);
 
-  const events = [
-    {
-      start: '2022-11-14T08:00:00.000Z',
-      end: '2022-11-17T17:00:00.000Z',
-      title: 'Business of Software Conference',
-      color: '#ff6d42'
+  const [date, setDate] = useState(new Date());
+  const [selected, setSelected] = useState(false);
+  const [event, setEvents] = useState(null);
+  const [from] = useState(moment(event?.startTime).toDate());
+
+  const [till] = useState(moment(event?.endTime).toISOString());
+
+  const { data, error, loading } = useQuery(GET_TIMELINE_REVIEW, {
+    variables: {
+      startTime: `${moment(date).format('YYYY-MM-DD')} 00:00 AM `,
+      endTime: `${moment(date).format('YYYY-MM-DD')} 11:59 PM `,
+      date: moment(date).format('YYYY-MM-DD'),
+      requiredUserIds: userId,
+      optionalUserIds: '',
+      timeStart: '00:00 AM',
+      timeEnd: '11:59 PM'
     },
-    {
-      start: '2022-11-12T12:00:00.000Z',
-      end: '2022-11-13T20:00:00.000Z',
-      title: 'Friends binge marathon',
-      color: '#7bde83'
+    onCompleted: (data) => {
+      console.log('timeline review data', data.timeReviewMobile.userEvents);
+      Object.keys(data.timeReviewMobile.userEvents).forEach(function (key) {
+        var value = data.timeReviewMobile.userEvents[key];
+        console.log('key', value);
+        setEvents(value);
+        // ...
+      });
+    },
+    onError: (data) => {
+      console.log('timeline error', data);
     }
-  ];
+  });
 
   const onEventClick = React.useCallback((event) => {
     console.log('pressed event', event.event.title);
@@ -58,33 +74,13 @@ const TimelineScreen = () => {
     // });
   }, []);
 
-  const view = React.useMemo(() => {
-    return {
-      schedule: { type: 'day' }
-    };
-  }, []);
+  // console.log('events', event);
 
   const range = { from, till };
   console.log('from', range);
-  console.log(
-    moment(new Date(2022, 11, 11, 20, 20)).subtract(1, 'hour').toDate()
-  );
+  console.log('date value', moment(event?.endDate).toDate());
   console.log(moment().add(1, 'hour').toDate());
   const [items] = useState([
-    {
-      title: [
-        { title: 'Some event' },
-        { title: 'ajay' },
-        { title: 'ajay' },
-        { title: 'ajay' },
-        { title: 'ajay' },
-        { title: 'ajay' }
-      ],
-      startDate: moment().subtract(1, 'hour').toDate(),
-      endDate: moment().add(1, 'hour').toDate(),
-      color: '#F7F5F9',
-      borderColor: '#AB9EC8'
-    },
     {
       title: [
         { title: 'Some event' },
@@ -94,8 +90,9 @@ const TimelineScreen = () => {
         { title: 'ajay' },
         { title: 'ajay' }
       ],
-      startDate: moment('2022-11-12T08:00:00.000Z').toDate(),
-      endDate: moment('2022-11-12T12:00:00.000Z').toDate(),
+      startDate: moment(event?.startTime).toDate(),
+      // moment(event?.startTime, 'YYYY-MM-DD hh:mm a'),
+      endDate: moment(event?.endTime).toDate(),
       color: '#FDF5F1',
       borderColor: '#E79D73'
     }
@@ -108,6 +105,93 @@ const TimelineScreen = () => {
     }
   ];
   let datesBlacklist = [moment().add(1, 'days')];
+
+  const events = [
+    {
+      start: '2022-11-26 00:30:00',
+      end: '2022-11-26 01:30:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-07 01:30:00',
+      end: '2017-09-07 02:20:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-07 04:10:00',
+      end: '2017-09-07 04:40:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-07 01:05:00',
+      end: '2017-09-07 01:45:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-07 14:30:00',
+      end: '2017-09-07 16:30:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-08 01:20:00',
+      end: '2017-09-08 02:20:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-08 04:10:00',
+      end: '2017-09-08 04:40:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-08 00:45:00',
+      end: '2017-09-08 01:45:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-08 11:30:00',
+      end: '2017-09-08 12:30:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-09 01:30:00',
+      end: '2017-09-09 02:00:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-09 03:10:00',
+      end: '2017-09-09 03:40:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    },
+    {
+      start: '2017-09-09 00:10:00',
+      end: '2017-09-09 01:45:00',
+      title: 'Dr. Mariana Joseph',
+      summary: '3412 Piedmont Rd NE, GA 3032',
+      color: 'red'
+    }
+  ];
 
   function MyItemCard({ style, item, dayIndex, daysTotal }) {
     return (
@@ -251,7 +335,7 @@ const TimelineScreen = () => {
           <Text style={styles.txtUsers}>Users</Text>
           <View style={styles.btnCommittees}>
             <Text style={styles.txtBtnCommittees}>
-              Selected {selectedUsers.length} users
+              Selected {selectedUsers?.length} users
             </Text>
             <Icon
               name={IconName.Arrow_Right}
@@ -264,20 +348,11 @@ const TimelineScreen = () => {
 
         <CalendarStrip
           calendarAnimation={{ type: 'sequence', duration: 30 }}
-          // daySelectionAnimation={{
-          //   type: 'border',
-          //   duration: 200,
-          //   borderWidth: 1,
-          //   borderHighlightColor: 'white'
-          // }}
-          style={{ height: 100 }}
+          style={{ height: 100, marginTop: SIZES[16] }}
           calendarHeaderPosition={'above'}
           // calendarHeaderFormat={moment(date).format('MMMM DD,YYYY')}
-          calendarHeaderStyle={{
-            color: 'white',
-            alignSelf: 'flex-start'
-          }}
-          // iconLeftStyle={{}}
+
+          showMonth={false}
           dateNumberStyle={{ color: Colors.bold, ...Fonts.PoppinsSemiBold[14] }}
           dateNameStyle={{ color: '#AEB0B5', ...Fonts.PoppinsRegular[12] }}
           highlightDateNumberStyle={{
@@ -296,12 +371,13 @@ const TimelineScreen = () => {
             borderRadius: 10
           }}
           startingDate={new Date()}
+          selectedDate={date}
           // datesWhitelist={datesWhitelist}
           // datesBlacklist={datesBlacklist}
           markedDates={markedDatesArray}
           onDateSelected={(date) => {
-            // setDate(date);
-            console.log(date.toISOString());
+            setDate(new Date(date));
+            console.log(date.toDate());
           }}
           scrollable={true}
           dayComponentHeight={100}
@@ -313,6 +389,7 @@ const TimelineScreen = () => {
             zIndex: 20
           }}
         />
+        {loading && <Loader />}
         <Text
           style={{
             ...Fonts.PoppinsBold[20],
@@ -329,9 +406,17 @@ const TimelineScreen = () => {
             marginBottom: SIZES[24]
           }}
         >
-          6 events
+          {event?.events.length} events
         </Text>
         <ScrollView style={{ flex: 1 }}>
+          {/* <EventCalendar
+            // eventTapped={this._eventTapped.bind(this)}
+            events={events}
+            width={width}
+            initDate={date}
+            renderEvent={(event) => <Text>{event.title}</Text>}
+            eventTapped={console.log('event pressed')}
+          /> */}
           <Timetable
             items={items}
             cardComponent={MyItemCard}

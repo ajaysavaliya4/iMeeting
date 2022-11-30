@@ -61,6 +61,8 @@ import EditAppointmentLocation from './src/screens/servicesScreen/appointments/E
 import EditAppointmentUsers from './src/screens/servicesScreen/appointments/EditAppointmentUsers/EditAppointmentUsers';
 import SelectUser from './src/screens/servicesScreen/meetings/selectUser/SelectUser';
 import AppointmentsDetails from './src/screens/servicesScreen/appointments/appointmentDetails/AppointmentDetails';
+import TasksList from './src/screens/servicesScreen/tasks/tasksList/TasksList';
+import FilterTask from './src/screens/servicesScreen/tasks/filterTask/FilterTask';
 
 const bottomTab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -339,6 +341,8 @@ const MainStack = ({ initialRouteName }) => {
         component={EditAppointmentLocation}
       />
       <Stack.Screen name="Users" component={Users} />
+      <Stack.Screen name="TasksList" component={TasksList} />
+      <Stack.Screen name="FilterTask" component={FilterTask} />
     </Stack.Navigator>
   );
 };

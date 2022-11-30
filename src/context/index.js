@@ -18,6 +18,7 @@ export const AppProvider = ({ children }) => {
   const [editModal, setEditModal] = useState(false);
   const [committee, setCommittee] = useState(null);
   const [required, setRequired] = useState([]);
+  const [companyUrl, setCompanyUrl] = useState(null);
   return (
     <UserContext.Provider
       value={{
@@ -30,7 +31,9 @@ export const AppProvider = ({ children }) => {
         committee,
         setCommittee,
         required,
-        setRequired
+        setRequired,
+        companyUrl,
+        setCompanyUrl
       }}
     >
       {children}
